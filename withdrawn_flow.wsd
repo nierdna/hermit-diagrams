@@ -9,6 +9,8 @@ rectangle "Hermit System" {
     component "Epoch Snapshot Manager" as snapshotManager
     queue "Withdrawal Queue" as withdrawalQueue
     database "User Balances State" as userBalances
+    database "Epoch Snapshots" as epochSnapshots
+    database "Total Reward State" as totalReward
 }
 
 rectangle "Scallop Protocol" {
@@ -22,26 +24,28 @@ card "USDC" as usdc
 ' Define withdrawal flow
 user -right-> fund : "1. Request Withdrawal"
 fund -[#red]-> withdrawalQueue : "2. Queue withdrawal request"
-fund -[#red]-> userBalances : "3. Mark balance as pending withdrawal"
 
-' Epoch transition
-snapshotManager -[#purple]-> userBalances : "4. Take epoch snapshot\nof user balances"
+' Epoch transition and snapshot
+snapshotManager -[#purple]-> userBalances : "3a. Take epoch snapshot\nof user balances"
+snapshotManager -[#purple]-> totalReward : "3b. Read total rewards\nat epoch end"
+snapshotManager -[#purple]-> epochSnapshots : "3c. Store daily snapshots"
 
 ' Process withdrawals after epoch
-withdrawalQueue -[#blue]-> fund : "5. Process queued withdrawals\nafter epoch snapshot"
-fund -[#blue]-> obligations : "6. Reduce positions"
-obligations -[#blue]-> lendingPool : "7. Repay borrowed USDC"
-fund -[#green]-> user : "8. Send USDC to user"
+fund -[#blue]-> lendingPool : "4. Repay borrowed USDC"
+obligations -[#blue]-> fund : "5. Withdraw USDC collateral"
+fund -[#green]-> user : "6. Send USDC to user\nand resolve withdrawal"
 
 ' Fund reallocation
-fundManager -[#orange]-> subAccounts : "9. Re-allocate remaining funds"
-subAccounts -[#orange]-> obligations : "10. Adjust obligations"
+fundManager -[#orange]-> subAccounts : "7a. Re-allocate remaining funds"
+subAccounts -[#orange]-> obligations : "7b. Adjust obligations"
 
 ' Add notes
 note right of withdrawalQueue : "Stores pending withdrawal\nrequests until next epoch"
 note bottom of fund : "Processes withdrawals after\nepoch snapshot"
 note bottom of fundManager : "Rebalances remaining funds\nacross sub-accounts"
 note right of userBalances : "Tracks user balances and\npending withdrawals"
+note right of snapshotManager : "Takes daily snapshots of\nsystem state at epoch end"
+note right of epochSnapshots : "Stores historical snapshots\nof balances and rewards"
 
 ' Style
 skinparam rectangle {
