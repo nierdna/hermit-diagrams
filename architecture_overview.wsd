@@ -1,0 +1,67 @@
+@startuml Hermit System Architecture
+
+' Define actors and components
+actor "User" as user
+rectangle "Hermit System" {
+    component "Fund Contract" as fund
+    component "Fund Manager" as fundManager
+    collections "Sub Accounts" as subAccounts
+}
+
+rectangle "Scallop Protocol" {
+    collections "Obligations" as obligations
+    component "Lending Pool" as lendingPool
+    component "Reward Pool" as rewardPool
+}
+
+' Define tokens and rewards
+card "USDC" as usdc
+card "sSUI" as ssui
+card "sScallop" as sscallop
+
+' Define relationships and flows
+user -right-> fund : "1. Deposit USDC"
+fund -down-> fundManager : "Forward funds"
+fundManager -right-> subAccounts : "2. Split into equal amounts"
+subAccounts -right-> obligations : "3. Create Obligations\n(USDC as collateral)"
+
+obligations -[#blue]down-> lendingPool : "4. Borrow USDC"
+lendingPool -[#red]up-> obligations : "Pay Borrow APR"
+rewardPool -[#green]-> obligations : "Earn Reward APR"
+
+obligations -[#green]right-> fund : "5. Daily Harvest\n(sSUI + sScallop)"
+
+' Add notes
+note bottom of fund : "Smart Contract holding user deposits"
+note bottom of fundManager : "Manages fund distribution"
+note bottom of obligations : "Hermit owns these obligations"
+note bottom of lendingPool : "Provides USDC lending"
+note right of rewardPool : "Distributes sSUI and sScallop"
+
+' Style
+skinparam rectangle {
+    BackgroundColor LightBlue
+    BorderColor Black
+}
+
+skinparam component {
+    BackgroundColor LightGreen
+    BorderColor Black
+}
+
+skinparam collections {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+skinparam card {
+    BackgroundColor LightGray
+    BorderColor Black
+}
+
+' Arrow colors
+skinparam arrow {
+    Color Black
+}
+
+@enduml
