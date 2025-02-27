@@ -29,6 +29,7 @@ obligations -[#blue]down-> lendingPool : "4. Borrow USDC"
 rewardPool -[#green]-> obligations : "Earn Reward APR"
 
 obligations -[#green]right-> fund : "5. Daily Harvest\n(sSUI + sScallop)"
+fund -[#red]down-> lendingPool : "6. Swap portion of rewards\nto maintain borrowed USDC amount"
 
 ' Add notes
 note bottom of fund : "Smart Contract holding user deposits"
