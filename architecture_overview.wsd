@@ -35,7 +35,7 @@ subAccounts -right-> obligations : "3. Create Obligations\n(USDC as collateral)"
 obligations -[#blue]down-> lendingPool : "4. Borrow USDC"
 rewardPool -[#green]-> obligations : "Earn Reward APR"
 
-obligations -[#green]right-> fund : "5. Daily Harvest\n(sSUI + sScallop)"
+obligations -[#green]right-> fund : "5. Epoch Harvest\n(sSUI + sScallop)"
 fund -[#red]down-> lendingPool : "6. Swap portion of rewards\nto maintain borrowed USDC amount"
 
 ' Add total reward update after harvest and swap
