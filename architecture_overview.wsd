@@ -6,9 +6,10 @@ rectangle "Hermit System" {
     component "Fund Contract" as fund
     component "Fund Manager" as fundManager
     collections "Sub Accounts" as subAccounts
+    component "Epoch Snapshot Manager" as snapshotManager
+    database "Epoch Snapshots" as epochSnapshots
     
     ' Add total states
-    database "Total Fund State" as totalFund
     database "Total Reward State" as totalReward
     database "User Balances State" as userBalances
 }
@@ -31,9 +32,6 @@ fund -down-> fundManager : "Forward funds"
 fundManager -right-> subAccounts : "2. Split into equal amounts"
 subAccounts -right-> obligations : "3. Create Obligations\n(USDC as collateral)"
 
-' Add total fund update after deposit
-fund -[#red]-> totalFund : "Update total fund\nafter deposit"
-
 obligations -[#blue]down-> lendingPool : "4. Borrow USDC"
 rewardPool -[#green]-> obligations : "Earn Reward APR"
 
@@ -43,15 +41,21 @@ fund -[#red]down-> lendingPool : "6. Swap portion of rewards\nto maintain borrow
 ' Add total reward update after harvest and swap
 fund -[#green]-> totalReward : "Update total reward\nafter harvest and swap"
 
+' Add snapshot relationships
+snapshotManager -[#purple]-> userBalances : "Read user balances\nat epoch end"
+snapshotManager -[#purple]-> totalReward : "Read total rewards\nat epoch end"
+snapshotManager -[#purple]-> epochSnapshots : "Store daily snapshots"
+
 ' Add notes
 note bottom of fund : "Smart Contract holding user deposits"
 note bottom of fundManager : "Manages fund distribution"
 note bottom of obligations : "Hermit owns these obligations"
 note bottom of lendingPool : "Provides USDC lending"
 note right of rewardPool : "Distributes sSUI and sScallop"
-note right of totalFund : "Tracks total USDC\ndeposited by users"
 note right of totalReward : "Tracks accumulated rewards\nafter swap operations"
 note right of userBalances : "Tracks individual user\ndeposit amounts"
+note bottom of snapshotManager : "Takes daily snapshots of\nsystem state at epoch end"
+note right of epochSnapshots : "Stores historical snapshots\nof balances and rewards"
 
 ' Style
 skinparam rectangle {
