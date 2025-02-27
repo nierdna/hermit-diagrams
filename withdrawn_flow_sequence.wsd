@@ -1,0 +1,80 @@
+@startuml Hermit Withdrawal Flow Sequence
+
+' Define participants
+actor User
+participant "Fund Contract" as Fund
+participant "Fund Manager" as FundManager
+participant "Sub Accounts" as SubAccounts
+participant "Withdrawal Queue" as WithdrawalQueue
+participant "Epoch Snapshot Manager" as SnapshotManager
+database "Epoch Snapshots" as EpochSnapshots
+database "Total Reward State" as TotalReward
+database "User Balances State" as UserBalances
+participant "Obligations" as Obligations
+participant "Lending Pool" as LendingPool
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Initial Withdrawal Request
+group Withdrawal Request
+    User -> Fund: 1. Request Withdrawal
+    activate Fund
+    Fund -> WithdrawalQueue: 2. Queue withdrawal request
+    note right: Stored until next epoch
+    deactivate Fund
+end
+
+' Epoch Snapshot
+group Epoch Transition & Snapshot
+    SnapshotManager -> UserBalances: 3a. Take epoch snapshot of user balances
+    SnapshotManager -> TotalReward: 3b. Read total rewards
+    SnapshotManager -> EpochSnapshots: 3c. Store daily snapshots
+end
+
+' Process Withdrawals
+group Withdrawal Processing
+    WithdrawalQueue -> Fund: 4. Process queued withdrawals
+    activate Fund
+    
+    Fund -> LendingPool: 5. Repay borrowed USDC
+    activate LendingPool
+    LendingPool --> Fund: Confirm repayment
+    deactivate LendingPool
+    
+    Fund -> Obligations: 6. Withdraw USDC collateral
+    activate Obligations
+    Obligations --> Fund: Return USDC
+    deactivate Obligations
+    
+    Fund -> User: 7. Send USDC to user
+    note right: Resolve withdrawal request
+    
+    Fund -> UserBalances: 8. Update user balance
+    note right: Update balance after withdrawal
+    deactivate Fund
+end
+
+' Fund Reallocation
+group Fund Rebalancing
+    FundManager -> SubAccounts: 9a. Re-allocate remaining funds
+    activate FundManager
+    SubAccounts -> Obligations: 9b. Adjust obligations
+    deactivate FundManager
+end
+
+' Add notes
+note over Fund: Processes withdrawals after epoch snapshot
+note over WithdrawalQueue: Stores pending withdrawal requests
+note over FundManager: Rebalances remaining funds across sub-accounts
+note over UserBalances: Tracks user balances and pending withdrawals
+note over SnapshotManager: Takes daily snapshots at epoch end
+note over EpochSnapshots: Stores historical snapshots
+
+@enduml 
