@@ -1,0 +1,75 @@
+@startuml Hermit Deposit Flow Sequence
+
+' Define participants
+actor User
+participant "Fund Contract" as Fund
+participant "Fund Manager" as FundManager
+participant "Sub Accounts" as SubAccounts
+participant "Reward Manager" as RewardManager
+participant "Epoch Snapshot Manager" as SnapshotManager
+database "Epoch Snapshots" as EpochSnapshots
+database "Total Reward State" as TotalReward
+database "User Balances State" as UserBalances
+participant "Obligations" as Obligations
+participant "Lending Pool" as LendingPool
+participant "Reward Pool" as RewardPool
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Initial Deposit Flow
+group Deposit Flow
+    User -> Fund: 1. Deposit USDC
+    activate Fund
+    
+    Fund -> UserBalances: Update user's balance
+    Fund -> FundManager: Forward funds
+    deactivate Fund
+    
+    activate FundManager
+    FundManager -> SubAccounts: 2. Split into equal amounts
+    FundManager -> Obligations: 3. Create Obligations (USDC as collateral)
+    deactivate FundManager
+    
+    Obligations -> LendingPool: 4. Borrow USDC
+end
+
+' Reward Flow
+group Reward Distribution (Per Epoch)
+    RewardPool -> Obligations: Earn Reward APR (continuous)
+    
+    Obligations -> RewardManager: 5. Epoch Harvest (sSUI + sScallop)
+    activate RewardManager
+    
+    RewardManager -> LendingPool: 6. Swap portion of rewards
+    note right: Maintain borrowed USDC amount
+    
+    RewardManager -> TotalReward: Update total reward
+    deactivate RewardManager
+end
+
+' Snapshot Flow
+group Daily Snapshot
+    SnapshotManager -> UserBalances: Read user balances
+    SnapshotManager -> TotalReward: Read total rewards
+    SnapshotManager -> EpochSnapshots: Store daily snapshots
+end
+
+' Add notes
+note over Fund: Smart Contract holding user deposits
+note over FundManager: Manages fund distribution
+note over RewardManager: Manages reward harvesting and swapping
+note over Obligations: Hermit owns these obligations
+note over LendingPool: Provides USDC lending
+note over RewardPool: Distributes sSUI and sScallop
+note over TotalReward: Tracks accumulated rewards
+note over UserBalances: Tracks individual user deposits
+note over SnapshotManager: Takes daily snapshots at epoch end
+
+@enduml 

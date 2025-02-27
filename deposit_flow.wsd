@@ -1,4 +1,4 @@
-@startuml Hermit System Architecture
+@startuml Hermit Deposit Flow
 
 ' Define actors and components
 actor "User" as user
