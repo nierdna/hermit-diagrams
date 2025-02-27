@@ -6,6 +6,7 @@ rectangle "Hermit System" {
     component "Fund Contract" as fund
     component "Fund Manager" as fundManager
     collections "Sub Accounts" as subAccounts
+    database "Snapshot Storage" as snapshot
 }
 
 rectangle "Scallop Protocol" {
@@ -31,12 +32,16 @@ rewardPool -[#green]-> obligations : "Earn Reward APR"
 obligations -[#green]right-> fund : "5. Daily Harvest\n(sSUI + sScallop)"
 fund -[#red]down-> lendingPool : "6. Swap portion of rewards\nto maintain borrowed USDC amount"
 
+' Add snapshot relationships
+fund -[#purple]-> snapshot : "Daily Snapshot:\n- User Deposits\n- Total Rewards"
+
 ' Add notes
 note bottom of fund : "Smart Contract holding user deposits"
 note bottom of fundManager : "Manages fund distribution"
 note bottom of obligations : "Hermit owns these obligations"
 note bottom of lendingPool : "Provides USDC lending"
 note right of rewardPool : "Distributes sSUI and sScallop"
+note right of snapshot : "Stores daily records of:\n- User USDC deposits\n- Harvested rewards"
 
 ' Style
 skinparam rectangle {
@@ -56,6 +61,11 @@ skinparam collections {
 
 skinparam card {
     BackgroundColor LightGray
+    BorderColor Black
+}
+
+skinparam database {
+    BackgroundColor LightPink
     BorderColor Black
 }
 
