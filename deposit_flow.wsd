@@ -5,6 +5,7 @@ actor "User" as user
 rectangle "Hermit System" {
     component "Fund Contract" as fund
     component "Fund Manager" as fundManager
+    component "Reward Manager" as rewardManager
     collections "Sub Accounts" as subAccounts
     component "Epoch Snapshot Manager" as snapshotManager
     database "Epoch Snapshots" as epochSnapshots
@@ -35,11 +36,11 @@ subAccounts -right-> obligations : "3. Create Obligations\n(USDC as collateral)"
 obligations -[#blue]down-> lendingPool : "4. Borrow USDC"
 rewardPool -[#green]-> obligations : "Earn Reward APR"
 
-obligations -[#green]right-> fund : "5. Epoch Harvest\n(sSUI + sScallop)"
-fund -[#red]down-> lendingPool : "6. Swap portion of rewards\nto maintain borrowed USDC amount"
+obligations -[#green]right-> rewardManager : "5. Epoch Harvest\n(sSUI + sScallop)"
+rewardManager -[#red]down-> lendingPool : "6. Swap portion of rewards\nto maintain borrowed USDC amount"
 
 ' Add total reward update after harvest and swap
-fund -[#green]-> totalReward : "Update total reward\nafter harvest and swap"
+rewardManager -[#green]-> totalReward : "Update total reward\nafter harvest and swap"
 
 ' Add snapshot relationships
 snapshotManager -[#purple]-> userBalances : "Read user balances\nat epoch end"
@@ -49,6 +50,7 @@ snapshotManager -[#purple]-> epochSnapshots : "Store daily snapshots"
 ' Add notes
 note bottom of fund : "Smart Contract holding user deposits"
 note bottom of fundManager : "Manages fund distribution"
+note bottom of rewardManager : "Manages reward harvesting, swapping\nand maintains reward balance"
 note bottom of obligations : "Hermit owns these obligations"
 note bottom of lendingPool : "Provides USDC lending"
 note right of rewardPool : "Distributes sSUI and sScallop"
