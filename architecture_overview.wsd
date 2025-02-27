@@ -6,7 +6,11 @@ rectangle "Hermit System" {
     component "Fund Contract" as fund
     component "Fund Manager" as fundManager
     collections "Sub Accounts" as subAccounts
-    database "Snapshot Storage" as snapshot
+    
+    ' Add total states
+    database "Total Fund State" as totalFund
+    database "Total Reward State" as totalReward
+    database "User Balances State" as userBalances
 }
 
 rectangle "Scallop Protocol" {
@@ -22,9 +26,13 @@ card "sScallop" as sscallop
 
 ' Define relationships and flows
 user -right-> fund : "1. Deposit USDC"
+fund -[#red]-> userBalances : "Update user's balance\nafter deposit"
 fund -down-> fundManager : "Forward funds"
 fundManager -right-> subAccounts : "2. Split into equal amounts"
 subAccounts -right-> obligations : "3. Create Obligations\n(USDC as collateral)"
+
+' Add total fund update after deposit
+fund -[#red]-> totalFund : "Update total fund\nafter deposit"
 
 obligations -[#blue]down-> lendingPool : "4. Borrow USDC"
 rewardPool -[#green]-> obligations : "Earn Reward APR"
@@ -32,8 +40,8 @@ rewardPool -[#green]-> obligations : "Earn Reward APR"
 obligations -[#green]right-> fund : "5. Daily Harvest\n(sSUI + sScallop)"
 fund -[#red]down-> lendingPool : "6. Swap portion of rewards\nto maintain borrowed USDC amount"
 
-' Add snapshot relationships
-fund -[#purple]-> snapshot : "Daily Snapshot:\n- User Deposits\n- Total Rewards"
+' Add total reward update after harvest and swap
+fund -[#green]-> totalReward : "Update total reward\nafter harvest and swap"
 
 ' Add notes
 note bottom of fund : "Smart Contract holding user deposits"
@@ -41,7 +49,9 @@ note bottom of fundManager : "Manages fund distribution"
 note bottom of obligations : "Hermit owns these obligations"
 note bottom of lendingPool : "Provides USDC lending"
 note right of rewardPool : "Distributes sSUI and sScallop"
-note right of snapshot : "Stores daily records of:\n- User USDC deposits\n- Harvested rewards"
+note right of totalFund : "Tracks total USDC\ndeposited by users"
+note right of totalReward : "Tracks accumulated rewards\nafter swap operations"
+note right of userBalances : "Tracks individual user\ndeposit amounts"
 
 ' Style
 skinparam rectangle {
