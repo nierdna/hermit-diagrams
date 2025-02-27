@@ -1,0 +1,82 @@
+@startuml Hermit Withdrawal Flow
+
+' Define actors and components
+actor "User" as user
+rectangle "Hermit System" {
+    component "Fund Contract" as fund
+    component "Fund Manager" as fundManager
+    collections "Sub Accounts" as subAccounts
+    component "Epoch Snapshot Manager" as snapshotManager
+    queue "Withdrawal Queue" as withdrawalQueue
+    database "User Balances State" as userBalances
+}
+
+rectangle "Scallop Protocol" {
+    collections "Obligations" as obligations
+    component "Lending Pool" as lendingPool
+}
+
+' Define tokens
+card "USDC" as usdc
+
+' Define withdrawal flow
+user -right-> fund : "1. Request Withdrawal"
+fund -[#red]-> withdrawalQueue : "2. Queue withdrawal request"
+fund -[#red]-> userBalances : "3. Mark balance as pending withdrawal"
+
+' Epoch transition
+snapshotManager -[#purple]-> userBalances : "4. Take epoch snapshot\nof user balances"
+
+' Process withdrawals after epoch
+withdrawalQueue -[#blue]-> fund : "5. Process queued withdrawals\nafter epoch snapshot"
+fund -[#blue]-> obligations : "6. Reduce positions"
+obligations -[#blue]-> lendingPool : "7. Repay borrowed USDC"
+fund -[#green]-> user : "8. Send USDC to user"
+
+' Fund reallocation
+fundManager -[#orange]-> subAccounts : "9. Re-allocate remaining funds"
+subAccounts -[#orange]-> obligations : "10. Adjust obligations"
+
+' Add notes
+note right of withdrawalQueue : "Stores pending withdrawal\nrequests until next epoch"
+note bottom of fund : "Processes withdrawals after\nepoch snapshot"
+note bottom of fundManager : "Rebalances remaining funds\nacross sub-accounts"
+note right of userBalances : "Tracks user balances and\npending withdrawals"
+
+' Style
+skinparam rectangle {
+    BackgroundColor LightBlue
+    BorderColor Black
+}
+
+skinparam component {
+    BackgroundColor LightGreen
+    BorderColor Black
+}
+
+skinparam collections {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+skinparam queue {
+    BackgroundColor LightGray
+    BorderColor Black
+}
+
+skinparam card {
+    BackgroundColor LightGray
+    BorderColor Black
+}
+
+skinparam database {
+    BackgroundColor LightPink
+    BorderColor Black
+}
+
+' Arrow colors
+skinparam arrow {
+    Color Black
+}
+
+@enduml
