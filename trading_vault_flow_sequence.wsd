@@ -1,0 +1,124 @@
+@startuml TradingVault User Flow Sequence
+
+' Define participants
+actor User
+participant "TradingVault Contract" as TradingVault
+participant "Position NFT" as NFT
+participant "Currency Token" as Currency
+participant "Reward Token" as RewardToken
+participant "Treasury" as Treasury
+participant "Price Setter" as PriceSetter
+participant "Operator" as Operator
+database "Position Storage" as PositionStorage
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Position Creation Flow
+group Position Creation
+    User -> Currency: 1. Approve TradingVault to spend tokens
+    activate User
+    
+    User -> TradingVault: 2. createPosition(amount, recipient)
+    activate TradingVault
+    
+    TradingVault -> Currency: 3. transferFrom(user, contract, amount)
+    TradingVault -> PositionStorage: 4. Store position details
+    note right: entryPrice, amount, openedAt, token
+    
+    TradingVault -> NFT: 5. Mint position NFT to recipient
+    TradingVault --> User: 6. Return position tokenId
+    deactivate TradingVault
+    deactivate User
+end
+
+' Price Update Flow
+group Price Update
+    PriceSetter -> TradingVault: 1. setPrice(newPrice)
+    activate TradingVault
+    TradingVault -> PositionStorage: 2. Update global price
+    deactivate TradingVault
+end
+
+' Reward Configuration Flow
+group Reward Configuration
+    Operator -> TradingVault: 1. updateRewardConfigs(configs)
+    activate TradingVault
+    TradingVault -> PositionStorage: 2. Update reward weight tiers
+    deactivate TradingVault
+end
+
+' Position Reduction Flow
+group Position Reduction
+    User -> TradingVault: 1. reducePosition(tokenId, amount)
+    activate TradingVault
+    
+    TradingVault -> PositionStorage: 2. Check position ownership
+    TradingVault -> PositionStorage: 3. Calculate rewards
+    note right: Based on price appreciation and duration
+    
+    alt Price > Entry Price
+        TradingVault -> RewardToken: 4a. Transfer userReward to user
+        TradingVault -> RewardToken: 4b. Transfer treasuryReward to treasury
+    else Price < Entry Price
+        TradingVault -> PositionStorage: 4c. Calculate loss amount
+        note right: loss = amount * (entryPrice - price) / PERCENTAGE_BASE
+    end
+    
+    TradingVault -> Currency: 5. Transfer remaining tokens to user
+    
+    alt Full Reduction
+        TradingVault -> PositionStorage: 6a. Mark position as closed
+        TradingVault -> NFT: 6b. Burn position NFT
+    else Partial Reduction
+        TradingVault -> PositionStorage: 6c. Update remaining amount
+    end
+    
+    TradingVault --> User: 7. Return (tokens and rewards)
+    deactivate TradingVault
+end
+
+' Batch Position Reduction Flow
+group Batch Position Reduction
+    User -> TradingVault: 1. reducePositions(tokenIds[], amounts[])
+    activate TradingVault
+    
+    loop For each position
+        TradingVault -> PositionStorage: 2. Process each position
+        note right: Same logic as single reduction
+    end
+    
+    TradingVault -> Currency: 3. Transfer total tokens in one transaction
+    TradingVault --> User: 4. Return (tokens and rewards)
+    deactivate TradingVault
+end
+
+' Add Reward Flow
+group Add Reward
+    User -> RewardToken: 1. Approve TradingVault to spend tokens
+    User -> TradingVault: 2. addReward(amount)
+    activate TradingVault
+    
+    TradingVault -> RewardToken: 3. transferFrom(user, contract, amount)
+    TradingVault -> PositionStorage: 4. Update totalRewardsAdded
+    
+    deactivate TradingVault
+end
+
+' Add notes
+note over TradingVault: Smart Contract managing positions as NFTs
+note over NFT: ERC721 tokens representing positions
+note over Currency: ERC20 token used for positions
+note over RewardToken: ERC20 token used for rewards
+note over Treasury: Receives portion of rewards
+note over PriceSetter: Role that can update price
+note over Operator: Role that can update configurations
+note over PositionStorage: Stores position details and state
+
+@enduml 
