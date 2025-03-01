@@ -10,6 +10,7 @@ participant "Treasury" as Treasury
 participant "Price Setter" as PriceSetter
 participant "Operator" as Operator
 database "Position Storage" as PositionStorage
+database "Contract State" as ContractState
 
 ' Style
 skinparam sequence {
@@ -42,7 +43,17 @@ end
 group Price Update
     PriceSetter -> TradingVault: 1. setPrice(newPrice)
     activate TradingVault
-    TradingVault -> PositionStorage: 2. Update global price
+    
+    TradingVault -> ContractState: 2. Update global price state
+    note right: price = newPrice
+    
+    TradingVault -> ContractState: 3. Calculate required rewards
+    note right: Based on price change and total amount
+    
+    TradingVault -> ContractState: 4. Emit PriceUpdated event
+    note right: oldPrice, newPrice, requiredReward
+    
+    TradingVault --> PriceSetter: 5. Confirm price update
     deactivate TradingVault
 end
 
@@ -50,7 +61,7 @@ end
 group Reward Configuration
     Operator -> TradingVault: 1. updateRewardConfigs(configs)
     activate TradingVault
-    TradingVault -> PositionStorage: 2. Update reward weight tiers
+    TradingVault -> ContractState: 2. Update reward weight tiers
     deactivate TradingVault
 end
 
@@ -80,7 +91,10 @@ group Position Reduction
         TradingVault -> PositionStorage: 6c. Update remaining amount
     end
     
-    TradingVault --> User: 7. Return (tokens and rewards)
+    TradingVault -> ContractState: 7. Update totalAmount
+    TradingVault -> ContractState: 8. Update totalRewardsHarvested
+    
+    TradingVault --> User: 9. Return (tokens and rewards)
     deactivate TradingVault
 end
 
@@ -95,7 +109,10 @@ group Batch Position Reduction
     end
     
     TradingVault -> Currency: 3. Transfer total tokens in one transaction
-    TradingVault --> User: 4. Return (tokens and rewards)
+    TradingVault -> ContractState: 4. Update contract state
+    note right: totalAmount, totalRewardsHarvested
+    
+    TradingVault --> User: 5. Return (tokens and rewards)
     deactivate TradingVault
 end
 
@@ -106,7 +123,8 @@ group Add Reward
     activate TradingVault
     
     TradingVault -> RewardToken: 3. transferFrom(user, contract, amount)
-    TradingVault -> PositionStorage: 4. Update totalRewardsAdded
+    TradingVault -> ContractState: 4. Update totalRewardsAdded
+    note right: totalRewardsAdded += amount
     
     deactivate TradingVault
 end
@@ -120,5 +138,6 @@ note over Treasury: Receives portion of rewards
 note over PriceSetter: Role that can update price
 note over Operator: Role that can update configurations
 note over PositionStorage: Stores position details and state
+note over ContractState: Stores global contract state variables
 
 @enduml 
