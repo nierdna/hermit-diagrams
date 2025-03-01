@@ -47,13 +47,10 @@ group Price Update
     TradingVault -> ContractState: 2. Update global price state
     note right: price = newPrice
     
-    TradingVault -> ContractState: 3. Calculate required rewards
-    note right: Based on price change and total amount
+    TradingVault -> ContractState: 3. Emit PriceUpdated event
+    note right: oldPrice, newPrice
     
-    TradingVault -> ContractState: 4. Emit PriceUpdated event
-    note right: oldPrice, newPrice, requiredReward
-    
-    TradingVault --> PriceSetter: 5. Confirm price update
+    TradingVault --> PriceSetter: 4. Confirm price update
     deactivate TradingVault
 end
 
