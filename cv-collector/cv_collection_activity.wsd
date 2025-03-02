@@ -12,23 +12,42 @@ skinparam NoteBorderColor Black
 ' Start
 start
 
-' Step 1: Retrieve CVs
-:Access Top CV Website;
-:Search for relevant candidates;
-:Select candidates of interest;
-:Download CV files;
+' Step 1: Retrieve CVs from Various Platforms
+partition "CV Retrieval" {
+  :Select CV source platform;
+  
+  if (Which platform?) then (TopCV)
+    :Access TopCV Website;
+  elseif (Platform 1)
+    :Access Platform 1 Website;
+  else (Platform 2)
+    :Access Platform 2 Website;
+  endif
+  
+  :Search for relevant candidates;
+  :Select candidates of interest;
+  :Download CV files;
+}
 
-' Step 2: Upload to Google Drive
-:Upload CV files to Google Drive;
-:Obtain URL links for each CV;
+' Step 2: Upload to Google Drive via Collection Service
+partition "CV Collection" {
+  :Submit CVs to Collection Service;
+  :Collection Service uploads files to Google Drive;
+  :Obtain URL links for each CV;
+  :Return storage links to recruiter;
+}
 
 ' Step 3: Process CVs
 :Submit CV for processing;
 
 partition "Information Extraction" {
-  :Apply OCR to convert PDF to text;
-  :Apply NLP to identify key sections;
-  :Apply Named Entity Recognition;
+  :Forward CV for information extraction;
+  :Request OCR processing from AI;
+  :Receive extracted text;
+  :Request NLP analysis from AI;
+  :Receive structured information;
+  :Request Named Entity Recognition from AI;
+  :Receive identified entities;
   
   :Extract candidate information;
   note right
@@ -41,6 +60,7 @@ partition "Information Extraction" {
     - Facebook Link
     - Twitter Link
     - Instagram Link
+    - Source Platform
   end note
   
   :Validate extracted information;
@@ -51,13 +71,18 @@ partition "Information Extraction" {
     :Flag for manual review;
     :Manually complete missing information;
   endif
+  
+  :Return extracted candidate information;
 }
 
 partition "Profile Creation" {
+  :Forward candidate information;
   :Create new candidate profile in LarkSuite;
   :Populate profile with extracted information;
   :Link CV URL to profile;
   :Save profile;
+  :Confirm profile creation;
+  :Return success status;
 }
 
 :Notify recruiter of completion;

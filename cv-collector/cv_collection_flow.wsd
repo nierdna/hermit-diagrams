@@ -5,11 +5,16 @@ actor "Recruiter" as recruiter
 actor "AI System" as ai
 
 rectangle "External Systems" {
-    component "Top CV Website" as topcv
+    rectangle "CV Source Platforms" {
+        component "TopCV" as topcv
+        component "Platform 1" as platform1
+        component "Platform 2" as platform2
+    }
     component "Google Drive" as gdrive
 }
 
 rectangle "Internal System" {
+    component "CV Collection Service" as collector
     component "CV Processor" as processor
     component "Information Extractor" as extractor
     component "Profile Creator" as creator
@@ -21,10 +26,15 @@ card "CV PDF" as cvpdf
 card "Candidate Information" as info
 
 ' Define relationships and flows
-recruiter -right-> topcv : "1. Retrieve CVs"
+recruiter -right-> topcv : "1a. Retrieve CVs"
+recruiter -right-> platform1 : "1b. Retrieve CVs"
+recruiter -right-> platform2 : "1c. Retrieve CVs"
 recruiter -down-> cvpdf : "Download CV files"
-recruiter -right-> gdrive : "2. Upload CVs"
-gdrive -down-> cvpdf : "Store and generate URL"
+
+recruiter -right-> collector : "2. Submit CVs"
+collector -right-> gdrive : "2a. Upload CV files"
+gdrive -down-> collector : "2b. Generate URL links"
+collector -left-> recruiter : "2c. Return storage links"
 
 cvpdf -right-> processor : "3. Process CV"
 processor -down-> extractor : "3.1 Extract information"
@@ -32,14 +42,20 @@ processor -down-> extractor : "3.1 Extract information"
 ai -[#blue]down-> extractor : "Apply OCR, NLP, \nNamed Entity Recognition"
 
 extractor -right-> info : "Extract candidate details"
-note bottom of info : "Name, Email, Phone, \nCV Link, LinkedIn, GitHub, \nFacebook, Twitter, Instagram"
+note bottom of info : "Name, Email, Phone, \nCV Link, LinkedIn, GitHub, \nFacebook, Twitter, Instagram, \nSource Platform"
 
 info -right-> creator : "3.2 Create profile"
 creator -down-> larkdb : "Store candidate profile"
+larkdb -up-> creator : "Confirm profile creation"
+creator -left-> processor : "Return success status"
+processor -up-> recruiter : "Notify completion"
 
 ' Add notes
 note bottom of topcv : "Source of candidate CVs"
+note bottom of platform1 : "Alternative CV source"
+note bottom of platform2 : "Alternative CV source"
 note bottom of gdrive : "Storage for CV files"
+note bottom of collector : "Handles CV collection from multiple sources"
 note bottom of processor : "Handles CV document processing"
 note bottom of extractor : "Uses AI to extract information"
 note bottom of creator : "Creates candidate profiles"
