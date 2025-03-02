@@ -1,0 +1,68 @@
+@startuml CV Collection Activity
+
+' Define style
+skinparam ActivityBackgroundColor LightBlue
+skinparam ActivityBorderColor Black
+skinparam ArrowColor Black
+skinparam ActivityDiamondBackgroundColor LightYellow
+skinparam ActivityDiamondBorderColor Black
+skinparam NoteBackgroundColor LightGreen
+skinparam NoteBorderColor Black
+
+' Start
+start
+
+' Step 1: Retrieve CVs
+:Access Top CV Website;
+:Search for relevant candidates;
+:Select candidates of interest;
+:Download CV files;
+
+' Step 2: Upload to Google Drive
+:Upload CV files to Google Drive;
+:Obtain URL links for each CV;
+
+' Step 3: Process CVs
+:Submit CV for processing;
+
+partition "Information Extraction" {
+  :Apply OCR to convert PDF to text;
+  :Apply NLP to identify key sections;
+  :Apply Named Entity Recognition;
+  
+  :Extract candidate information;
+  note right
+    - Name
+    - Email
+    - Phone
+    - CV Link
+    - LinkedIn Link
+    - GitHub Link
+    - Facebook Link
+    - Twitter Link
+    - Instagram Link
+  end note
+  
+  :Validate extracted information;
+  
+  if (Information complete?) then (yes)
+    :Proceed with complete information;
+  else (no)
+    :Flag for manual review;
+    :Manually complete missing information;
+  endif
+}
+
+partition "Profile Creation" {
+  :Create new candidate profile in LarkSuite;
+  :Populate profile with extracted information;
+  :Link CV URL to profile;
+  :Save profile;
+}
+
+:Notify recruiter of completion;
+
+' End
+stop
+
+@enduml 

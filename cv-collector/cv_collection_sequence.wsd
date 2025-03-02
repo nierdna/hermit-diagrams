@@ -1,0 +1,68 @@
+@startuml CV Collection Sequence
+
+' Define participants
+actor "Recruiter" as recruiter
+participant "Top CV Website" as topcv
+participant "Google Drive" as gdrive
+participant "CV Processor" as processor
+participant "Information Extractor" as extractor
+participant "AI System" as ai
+participant "Profile Creator" as creator
+database "LarkSuite Database" as larkdb
+
+' Define sequence
+== Step 1: Retrieve CVs ==
+recruiter -> topcv : Access website
+topcv -> recruiter : Display candidate CVs
+recruiter -> topcv : Select and download CVs
+topcv -> recruiter : Return CV files
+
+== Step 2: Upload to Google Drive ==
+recruiter -> gdrive : Upload CV files
+gdrive -> recruiter : Generate and return URL links
+
+== Step 3: Process and Create Profile ==
+recruiter -> processor : Submit CV for processing
+processor -> extractor : Forward CV for information extraction
+extractor -> ai : Request OCR processing
+ai -> extractor : Return extracted text
+extractor -> ai : Request NLP analysis
+ai -> extractor : Return structured information
+extractor -> ai : Request Named Entity Recognition
+ai -> extractor : Return identified entities
+
+extractor -> processor : Return extracted candidate information
+note right
+  - Name
+  - Email
+  - Phone
+  - CV Link
+  - LinkedIn Link
+  - GitHub Link
+  - Facebook Link
+  - Twitter Link
+  - Instagram Link
+end note
+
+processor -> creator : Forward candidate information
+creator -> larkdb : Create new candidate profile
+larkdb -> creator : Confirm profile creation
+creator -> processor : Return success status
+processor -> recruiter : Notify completion
+
+' Style
+skinparam sequence {
+    ArrowColor Black
+    ActorBorderColor Black
+    LifeLineBorderColor Gray
+    LifeLineBackgroundColor LightGray
+    
+    ParticipantBorderColor Black
+    ParticipantBackgroundColor LightBlue
+    ParticipantFontColor Black
+    
+    ActorBackgroundColor LightBlue
+    ActorFontColor Black
+}
+
+@enduml 
