@@ -1,0 +1,129 @@
+@startuml Hermit SCA and veSCA Deposit Flow Sequence
+
+' Define participants
+actor User
+participant "Hermit Protocol" as Hermit
+participant "SCA Manager" as SCAManager
+participant "veSCA Manager" as veSCAManager
+participant "hSCA Manager" as hSCAManager
+participant "Scallop Protocol" as Scallop
+database "User Balances State" as UserBalances
+database "veSCA Lock State" as veSCALockState
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' SCA Deposit Flow
+group SCA Deposit Flow (1:1 Ratio)
+    User -> Hermit: 1. Deposit SCA
+    activate Hermit
+    
+    Hermit -> SCAManager: 2. Process SCA deposit
+    activate SCAManager
+    
+    SCAManager -> hSCAManager: 3. Mint hSCA (1:1 ratio)
+    activate hSCAManager
+    
+    hSCAManager -> UserBalances: 4. Update user's hSCA balance
+    hSCAManager --> SCAManager: Confirm hSCA minting
+    deactivate hSCAManager
+    
+    SCAManager -> UserBalances: 5. Record SCA deposit
+    SCAManager --> Hermit: Confirm SCA processing
+    deactivate SCAManager
+    
+    Hermit --> User: 6. Return hSCA tokens (1:1 ratio)
+    deactivate Hermit
+    
+    note right: User receives hSCA tokens at 1:1 ratio with deposited SCA
+end
+
+' veSCA Deposit Flow
+group veSCA Deposit Flow (Max Lock)
+    User -> Hermit: 1. Deposit veSCA
+    activate Hermit
+    
+    Hermit -> veSCAManager: 2. Process veSCA deposit
+    activate veSCAManager
+    
+    veSCAManager -> Scallop: 3. Max lock veSCA (4 years)
+    activate Scallop
+    
+    Scallop -> veSCALockState: 4. Update veSCA lock state
+    Scallop --> veSCAManager: Confirm max lock
+    deactivate Scallop
+    
+    vESCAManager -> UserBalances: 5. Record veSCA deposit with max lock
+    vESCAManager --> Hermit: Confirm veSCA processing
+    deactivate vESCAManager
+    
+    Hermit --> User: 6. Confirm veSCA max lock
+    deactivate Hermit
+    
+    note right: veSCA is locked for maximum period (4 years)
+end
+
+' SCA Accumulation Flow
+group SCA Accumulation to veSCA (Threshold: 1000 SCA)
+    User -> Hermit: 1. Deposit SCA
+    activate Hermit
+    
+    Hermit -> SCAManager: 2. Process SCA deposit
+    activate SCAManager
+    
+    SCAManager -> UserBalances: 3. Update user's SCA balance
+    
+    SCAManager -> UserBalances: 4. Check if SCA balance ≥ 1000
+    
+    alt SCA Balance ≥ 1000
+        SCAManager -> vESCAManager: 5a. Convert 1000 SCA to veSCA
+        activate vESCAManager
+        
+        vESCAManager -> Scallop: 6. Create veSCA with max lock (4 years)
+        activate Scallop
+        
+        Scallop -> vESCALockState: 7. Record new veSCA with max lock
+        Scallop --> vESCAManager: Return veSCA
+        deactivate Scallop
+        
+        vESCAManager -> UserBalances: 8. Update user's veSCA balance
+        vESCAManager -> UserBalances: 9. Reduce SCA balance by 1000
+        
+        vESCAManager --> SCAManager: Confirm veSCA creation
+        deactivate vESCAManager
+        
+        SCAManager --> Hermit: Notify SCA converted to veSCA
+    else SCA Balance < 1000
+        SCAManager -> hSCAManager: 5b. Mint hSCA (1:1 ratio)
+        activate hSCAManager
+        
+        hSCAManager -> UserBalances: Update user's hSCA balance
+        hSCAManager --> SCAManager: Confirm hSCA minting
+        deactivate hSCAManager
+        
+        SCAManager --> Hermit: Notify hSCA minted
+    end
+    
+    deactivate SCAManager
+    Hermit --> User: 10. Return transaction result
+    deactivate Hermit
+    
+    note right: When SCA accumulates to 1000, it's automatically converted to veSCA with max lock
+end
+
+' Add notes
+note over Hermit: Main protocol entry point
+note over SCAManager: Manages SCA deposits and conversions
+note over vESCAManager: Handles veSCA creation and locking
+note over hSCAManager: Mints hSCA tokens at 1:1 ratio
+note over UserBalances: Tracks user's SCA, hSCA, and veSCA balances
+note over vESCALockState: Records veSCA lock periods
+note over Scallop: External protocol for veSCA locking
+
+@enduml 
