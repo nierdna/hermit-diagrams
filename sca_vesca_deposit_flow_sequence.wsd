@@ -4,11 +4,12 @@
 actor User
 participant "Hermit Protocol" as Hermit
 participant "SCA Manager" as SCAManager
-participant "veSCA Manager" as veSCAManager
+participant "veSCA Manager" as vESCAManager
 participant "hSCA Manager" as hSCAManager
+participant "Epoch Manager" as EpochManager
 participant "Scallop Protocol" as Scallop
 database "User Balances State" as UserBalances
-database "veSCA Lock State" as veSCALockState
+database "veSCA Lock State" as vESCALockState
 
 ' Style
 skinparam sequence {
@@ -49,14 +50,14 @@ group veSCA Deposit Flow (Max Lock)
     User -> Hermit: 1. Deposit veSCA
     activate Hermit
     
-    Hermit -> veSCAManager: 2. Process veSCA deposit
-    activate veSCAManager
+    Hermit -> vESCAManager: 2. Process veSCA deposit
+    activate vESCAManager
     
-    veSCAManager -> Scallop: 3. Max lock veSCA (4 years)
+    vESCAManager -> Scallop: 3. Max lock veSCA (4 years)
     activate Scallop
     
-    Scallop -> veSCALockState: 4. Update veSCA lock state
-    Scallop --> veSCAManager: Confirm max lock
+    Scallop -> vESCALockState: 4. Update veSCA lock state
+    Scallop --> vESCAManager: Confirm max lock
     deactivate Scallop
     
     vESCAManager -> UserBalances: 5. Record veSCA deposit with max lock
@@ -117,11 +118,47 @@ group SCA Accumulation to veSCA (Threshold: 1000 SCA)
     note right: When SCA accumulates to 1000, it's automatically converted to veSCA with max lock
 end
 
+' Automated veSCA Re-Max Lock Flow
+group Automated veSCA Re-Max Lock (Daily Epoch)
+    EpochManager -> EpochManager: 1. Daily epoch trigger
+    activate EpochManager
+    note right: Automated process runs once per day
+    
+    EpochManager -> vESCALockState: 2. Scan for veSCA locks
+    activate vESCALockState
+    
+    vESCALockState --> EpochManager: 3. Return veSCA locks with reduced time
+    deactivate vESCALockState
+    
+    EpochManager -> vESCAManager: 4. Request re-max lock for eligible veSCA
+    activate vESCAManager
+    
+    loop For each eligible veSCA
+        vESCAManager -> Scallop: 5. Re-max lock veSCA to 4 years
+        activate Scallop
+        
+        Scallop -> vESCALockState: 6. Update veSCA lock period
+        Scallop --> vESCAManager: 7. Confirm re-max lock
+        deactivate Scallop
+        
+        vESCAManager -> UserBalances: 8. Update user's veSCA lock status
+    end
+    
+    vESCAManager --> EpochManager: 9. Report re-max lock completion
+    deactivate vESCAManager
+    
+    EpochManager -> Hermit: 10. Update protocol state
+    deactivate EpochManager
+    
+    note right: All veSCA are automatically re-locked to maximum period (4 years) each epoch
+end
+
 ' Add notes
 note over Hermit: Main protocol entry point
 note over SCAManager: Manages SCA deposits and conversions
 note over vESCAManager: Handles veSCA creation and locking
 note over hSCAManager: Mints hSCA tokens at 1:1 ratio
+note over EpochManager: Manages daily epoch transitions and automated processes
 note over UserBalances: Tracks user's SCA, hSCA, and veSCA balances
 note over vESCALockState: Records veSCA lock periods
 note over Scallop: External protocol for veSCA locking
