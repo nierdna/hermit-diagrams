@@ -156,6 +156,59 @@ group Automated veSCA Re-Max Lock (Daily Epoch)
     note right: All veSCA are automatically re-locked to maximum period (4 years) each epoch
 end
 
+' Non-Max Locked veSCA Exit Flow
+group Non-Max Locked veSCA Exit Flow
+    User -> Scallop: 1. User holds non-max locked veSCA
+    activate User
+    note right: User has veSCA with lock period < 4 years
+    
+    User -> Hermit: 2. Deposit non-max locked veSCA
+    activate Hermit
+    
+    Hermit -> vESCAManager: 3. Process veSCA deposit
+    activate vESCAManager
+    
+    vESCAManager -> Scallop: 4. Max lock veSCA (extend to 4 years)
+    activate Scallop
+    
+    Scallop -> vESCALockState: 5. Update veSCA lock state to max
+    Scallop --> vESCAManager: Confirm max lock
+    deactivate Scallop
+    
+    vESCAManager -> hSCAManager: 6. Request hSCA minting
+    activate hSCAManager
+    
+    hSCAManager -> UserBalances: 7. Mint hSCA based on veSCA value
+    hSCAManager --> vESCAManager: Confirm hSCA minting
+    deactivate hSCAManager
+    
+    vESCAManager -> UserBalances: 8. Record veSCA deposit with max lock
+    vESCAManager --> Hermit: Confirm veSCA processing
+    deactivate vESCAManager
+    
+    Hermit --> User: 9. Return hSCA tokens
+    deactivate Hermit
+    
+    User -> AMMPool: 10. Swap hSCA for SCA
+    activate AMMPool
+    
+    AMMPool -> LiquidityPoolState: 11. Calculate swap based on x*y=k
+    activate LiquidityPoolState
+    
+    LiquidityPoolState -> LiquidityPoolState: 12. Update pool state
+    LiquidityPoolState --> AMMPool: Return SCA amount
+    deactivate LiquidityPoolState
+    
+    AMMPool -> UserBalances: 13. Deduct hSCA from user
+    AMMPool -> UserBalances: 14. Add SCA to user
+    
+    AMMPool --> User: 15. Return SCA tokens
+    deactivate AMMPool
+    
+    note right: User has successfully exited non-max locked veSCA position
+    deactivate User
+end
+
 ' AMM Liquidity Provision Flow
 group AMM Liquidity Provision (hSCA-SCA Pair)
     User -> AMMPool: 1. Add liquidity (hSCA + SCA at 1:1 ratio)
