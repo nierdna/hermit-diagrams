@@ -43,7 +43,7 @@ group Withdrawal Processing
     WithdrawalQueue -> Fund: 4. Process queued withdrawals
     activate Fund
     
-    Fund -> LendingPool: 5. Repay borrowed USDC
+    Fund -> LendingPool: 5. Repay borrowed USDT
     activate LendingPool
     LendingPool --> Fund: Confirm repayment
     deactivate LendingPool
