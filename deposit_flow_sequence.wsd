@@ -5,6 +5,7 @@ actor User
 participant "Fund Contract" as Fund
 participant "Fund Manager" as FundManager
 participant "Sub Accounts" as SubAccounts
+participant "hSCA Manager" as hSCAManager
 participant "Reward Manager" as RewardManager
 participant "Epoch Snapshot Manager" as SnapshotManager
 database "Epoch Snapshots" as EpochSnapshots
@@ -40,6 +41,19 @@ group Deposit Flow
     Obligations -> LendingPool: 4. Borrow USDT
 end
 
+' APR Boosting Flow
+group APR Boosting with veSCA
+    hSCAManager -> SubAccounts: Assign veSCA to sub account
+    activate hSCAManager
+    note right: Each sub account can receive one veSCA
+    
+    SubAccounts -> SubAccounts: Apply APR boost multiplier
+    note right: Boosted APR based on veSCA formula
+    
+    hSCAManager -> RewardPool: Register boosted sub account
+    deactivate hSCAManager
+end
+
 ' Reward Flow
 group Reward Distribution (Per Epoch)
     RewardPool -> Obligations: Earn Reward APR (continuous)
@@ -64,6 +78,7 @@ end
 ' Add notes
 note over Fund: Smart Contract holding user deposits
 note over FundManager: Manages fund distribution
+note over hSCAManager: Manages veSCA tokens for APR boosting
 note over RewardManager: Manages reward harvesting and swapping
 note over Obligations: Hermit owns these obligations
 note over LendingPool: Provides USDT lending
