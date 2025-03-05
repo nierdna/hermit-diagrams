@@ -1,0 +1,124 @@
+@startuml W-Pre-market AMM Class Diagram
+
+' Style
+skinparam class {
+    BackgroundColor LightBlue
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+' Classes
+class WPreMarketAMM {
+    - liquidityPools: Map<TokenPair, LiquidityPool>
+    + addLiquidity(baseToken, Pa, Pb, amount): uint256
+    + removeLiquidity(lpTokens): (uint256, uint256)
+    + swapBaseForWPre(baseAmount): uint256
+    + swapWPreForBase(wPreAmount): uint256
+    + getPrice(): uint256
+    + getLiquidity(): uint256
+}
+
+class LiquidityPool {
+    - baseToken: Token
+    - wPreToken: Token
+    - baseReserve: uint256
+    - wPreReserve: uint256
+    - minPrice: uint256 (Pa)
+    - maxPrice: uint256 (Pb)
+    - liquidity: uint256 (L)
+    - lpToken: LPToken
+    
+    + addLiquidity(baseAmount, Pa, Pb): (uint256, uint256)
+    + removeLiquidity(lpTokens): (uint256, uint256)
+    + swapBaseForWPre(baseAmount): uint256
+    + swapWPreForBase(wPreAmount): uint256
+    + calculateLiquidity(x, Pa, Pb): uint256
+    + calculateWPreAmount(x, Pa, Pb): uint256
+    + getCurrentPrice(): uint256
+}
+
+class PriceCalculator {
+    + calculateLiquidity(x, Pa, Pb): uint256
+    + calculateWPreAmount(x, Pa, Pb): uint256
+    + calculateBaseAmount(y, Pa, Pb): uint256
+    + calculateCurrentPrice(baseReserve, wPreReserve, Pa, Pb): uint256
+    + calculateSwapOutput(inputAmount, inputReserve, outputReserve, Pa, Pb): uint256
+}
+
+class TokenMinter {
+    + mintWPreTokens(amount): Token
+    + burnWPreTokens(amount): void
+}
+
+class Token {
+    - address: Address
+    - name: string
+    - symbol: string
+    - decimals: uint8
+    - totalSupply: uint256
+    
+    + balanceOf(account): uint256
+    + transfer(to, amount): bool
+    + approve(spender, amount): bool
+    + transferFrom(from, to, amount): bool
+}
+
+class LPToken {
+    - pool: LiquidityPool
+    
+    + mint(to, amount): void
+    + burn(from, amount): void
+}
+
+class User {
+    - address: Address
+    - baseTokenBalance: uint256
+    - wPreTokenBalance: uint256
+    - lpTokenBalance: uint256
+    
+    + addLiquidity(baseAmount, Pa, Pb): void
+    + removeLiquidity(lpAmount): void
+    + swapBaseForWPre(baseAmount): void
+    + swapWPreForBase(wPreAmount): void
+}
+
+' Relationships
+WPreMarketAMM "1" *-- "many" LiquidityPool : contains
+LiquidityPool "1" *-- "1" LPToken : issues
+LiquidityPool "1" --> "1" PriceCalculator : uses
+WPreMarketAMM "1" --> "1" TokenMinter : uses
+User "many" --> "1" WPreMarketAMM : interacts with
+LiquidityPool "1" --> "2" Token : manages
+
+' Notes with formulas
+note right of PriceCalculator
+  <b>Key Formulas:</b>
+  
+  <b>Thanh khoản (Liquidity):</b>
+  L = x / (1/√Pa - 1/√Pb)
+  
+  <b>Tại giá P:</b>
+  x = L · (1/√P - 1/√Pb)
+  y = L · (√P - √Pa)
+  
+  <b>Công thức tổng quát:</b>
+  y = x · (√Pb - √Pa) / (1/√Pa - 1/√Pb)
+end note
+
+note bottom of LiquidityPool
+  The liquidity pool maintains the bonding curve
+  relationship between base tokens and w-pre-tokens
+  according to the mathematical formulas.
+end note
+
+note bottom of TokenMinter
+  Creates new w-pre-tokens when liquidity is added
+  and burns them when liquidity is removed.
+end note
+
+@enduml 

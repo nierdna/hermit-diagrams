@@ -1,0 +1,80 @@
+@startuml W-Pre-market AMM State Diagram
+
+' Style
+skinparam state {
+    BackgroundColor LightBlue
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+' States
+[*] --> Initialized
+
+state Initialized {
+    [*] --> NoLiquidity
+    
+    state NoLiquidity
+    state ActivePool
+    
+    NoLiquidity --> ActivePool : LP Provider adds initial liquidity
+    ActivePool --> NoLiquidity : All liquidity removed
+}
+
+state ActivePool {
+    [*] --> Balanced
+    
+    state Balanced
+    state BaseTokenHeavy
+    state WPreTokenHeavy
+    
+    Balanced --> BaseTokenHeavy : Traders buy w-pre-tokens
+    Balanced --> WPreTokenHeavy : Traders sell w-pre-tokens
+    
+    BaseTokenHeavy --> Balanced : Price equilibrium reached
+    WPreTokenHeavy --> Balanced : Price equilibrium reached
+    
+    BaseTokenHeavy --> BaseTokenHeavy : More base tokens added
+    WPreTokenHeavy --> WPreTokenHeavy : More w-pre-tokens added
+}
+
+' Transitions
+Initialized --> [*] : System shutdown
+
+' Notes
+note right of NoLiquidity
+  No liquidity in the pool
+  Cannot perform swaps
+  Waiting for initial liquidity
+end note
+
+note right of Balanced
+  Base tokens and w-pre-tokens are balanced
+  according to the bonding curve formula
+  Current price is within Pa and Pb range
+end note
+
+note right of BaseTokenHeavy
+  More base tokens in the pool than the
+  balanced state would require
+  Price of w-pre-token is higher
+end note
+
+note right of WPreTokenHeavy
+  More w-pre-tokens in the pool than the
+  balanced state would require
+  Price of w-pre-token is lower
+end note
+
+note bottom of ActivePool
+  Pool is active and can process:
+  - Swaps (buy/sell w-pre-tokens)
+  - Adding more liquidity
+  - Removing liquidity
+end note
+
+@enduml 

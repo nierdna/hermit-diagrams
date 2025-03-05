@@ -1,0 +1,96 @@
+@startuml W-Pre-market AMM Component Diagram
+
+' Style
+skinparam component {
+    BackgroundColor LightBlue
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor Black
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+' Components
+package "W-Pre-market AMM System" {
+    component [AMM Core] as Core
+    component [Price Calculator] as Calculator
+    component [Token Minter] as Minter
+    component [Liquidity Manager] as LiquidityManager
+    component [Swap Engine] as SwapEngine
+    database "Liquidity Pool" as Pool
+}
+
+' External actors
+actor "LP Provider" as LPProvider
+actor "Trader" as Trader
+
+' Interfaces
+interface "Add Liquidity" as IAddLiquidity
+interface "Remove Liquidity" as IRemoveLiquidity
+interface "Swap Tokens" as ISwap
+interface "Price Oracle" as IPriceOracle
+
+' Connections
+LPProvider -- IAddLiquidity
+LPProvider -- IRemoveLiquidity
+Trader -- ISwap
+Core -- IPriceOracle
+
+IAddLiquidity - LiquidityManager
+IRemoveLiquidity - LiquidityManager
+ISwap - SwapEngine
+IPriceOracle - Calculator
+
+Core --> Calculator : uses
+Core --> Minter : uses
+Core --> LiquidityManager : uses
+Core --> SwapEngine : uses
+LiquidityManager --> Pool : manages
+SwapEngine --> Pool : reads/updates
+Calculator --> Pool : reads state
+
+' Notes with formulas
+note right of Calculator
+  <b>Key Formulas:</b>
+  
+  <b>Thanh khoản (Liquidity):</b>
+  L = x / (1/√Pa - 1/√Pb)
+  
+  <b>Tại giá P:</b>
+  x = L · (1/√P - 1/√Pb)
+  y = L · (√P - √Pa)
+  
+  <b>Công thức tổng quát:</b>
+  y = x · (√Pb - √Pa) / (1/√Pa - 1/√Pb)
+end note
+
+note bottom of Pool
+  Contains:
+  - Base tokens (ETH, USDC, etc.)
+  - w-pre-tokens
+  - Current price information
+  - Liquidity parameters (Pa, Pb)
+end note
+
+note bottom of Minter
+  Mints new w-pre-tokens when:
+  - LP providers add liquidity
+  - System needs to maintain price bounds
+end note
+
+note bottom of SwapEngine
+  Handles:
+  - Buy w-pre-tokens with base tokens
+  - Sell w-pre-tokens for base tokens
+  - Calculates price impact
+  - Ensures trades follow bonding curve
+end note
+
+@enduml 
