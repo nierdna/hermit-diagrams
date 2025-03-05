@@ -9,6 +9,8 @@ participant "Price Calculator" as Calculator
 participant "Token Minter" as Minter
 participant "Fee Manager" as FeeManager
 database "Fee Trackers" as FeeTrackers
+participant "Settlement Manager" as Settlement
+database "LP Position Trackers" as LPTrackers
 
 ' Style
 skinparam sequence {
@@ -53,6 +55,8 @@ group LP Provider Adds Liquidity
     deactivate Minter
     
     AMM -> Pool: Add x base token + y w-token to pool
+    AMM -> Pool: Add x base token as collateral
+    AMM -> LPTrackers: Record collateral amount and initial w-token amount
     AMM --> LPProvider: Issue LP tokens representing share of pool
     
     deactivate AMM
@@ -133,6 +137,64 @@ group LP Provider Collects Fees
     deactivate AMM
 end
 
+' Add a new flow for settlement phase
+group Enter Settlement Phase (After TGE)
+    note over AMM, Settlement: System enters settlement phase after token generation event (TGE)
+    
+    AMM -> Settlement: Enter settlement phase with real token
+    activate Settlement
+    Settlement -> Pool: Add real token to pool
+    Settlement -> Pool: Set isSettlementPhase = true
+    Settlement --> AMM: Confirm settlement phase entered
+    deactivate Settlement
+end
+
+' Add a new flow for LP Provider withdrawal in settlement phase
+group LP Provider Withdraws Liquidity in Settlement Phase
+    LPProvider -> AMM: Request to withdraw liquidity (LP token ID)
+    activate AMM
+    
+    AMM -> Settlement: Calculate required token amount
+    activate Settlement
+    Settlement -> LPTrackers: Get initial w-token amount
+    Settlement -> Pool: Get current w-token balance for position
+    Settlement -> Settlement: Calculate required token = initial w-token - current w-token
+    Settlement --> AMM: Return required token amount
+    deactivate Settlement
+    
+    AMM --> LPProvider: Request required token amount
+    LPProvider -> AMM: Provide required token amount
+    
+    AMM -> Settlement: Process liquidity removal
+    activate Settlement
+    Settlement -> Pool: Remove liquidity
+    Settlement -> Pool: Return collateral
+    Settlement -> Pool: Add provided tokens
+    Settlement --> AMM: Return base token + collateral
+    deactivate Settlement
+    
+    AMM --> LPProvider: Send base token + collateral
+    
+    deactivate AMM
+end
+
+' Add a new flow for Trader swapping w-token for real token
+group Trader Swaps W-Token for Token
+    Trader -> AMM: Swap w-token for token (1:1)
+    activate AMM
+    
+    AMM -> Settlement: Process w-token to token swap
+    activate Settlement
+    Settlement -> Pool: Burn w-token
+    Settlement -> Pool: Transfer real token to trader
+    Settlement --> AMM: Confirm swap completed
+    deactivate Settlement
+    
+    AMM --> Trader: Send real token (1:1 ratio)
+    
+    deactivate AMM
+end
+
 ' Add notes
 note over AMM: Automated Market Maker for pre-market tokens
 note over Pool: Contains base token (ETH, USDC, etc.) and w-token
@@ -142,5 +204,7 @@ note over LPProvider: Provides liquidity with base token and price range (Pa to 
 note over Trader: Trades base token for w-token or vice versa
 note over FeeManager: Tracks and manages fee collection for LP positions
 note over FeeTrackers: Stores fee growth data for each price range
+note over Settlement: Manages settlement phase after TGE
+note over LPTrackers: Tracks LP positions, collateral and initial w-token amounts
 
 @enduml 
