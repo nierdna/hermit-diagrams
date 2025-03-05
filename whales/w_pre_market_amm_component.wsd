@@ -82,7 +82,7 @@ end note
 
 note bottom of Pool
   Contains:
-  - Base tokens (ETH, USDC, etc.)
+  - Base token (ETH, USDC, etc.)
   - w-token
   - Current price information
   - Liquidity parameters (Pa, Pb)
@@ -96,8 +96,8 @@ end note
 
 note bottom of SwapEngine
   Handles:
-  - Buy w-token with base tokens
-  - Sell w-token for base tokens
+  - Buy w-token with base token
+  - Sell w-token for base token
   - Calculates price impact
   - Ensures trades follow bonding curve
 end note

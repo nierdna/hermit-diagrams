@@ -138,7 +138,7 @@ end note
 
 note bottom of LiquidityPool
   The liquidity pool maintains the bonding curve
-  relationship between base tokens and w-token
+  relationship between base token and w-token
   according to the mathematical formulas.
 end note
 

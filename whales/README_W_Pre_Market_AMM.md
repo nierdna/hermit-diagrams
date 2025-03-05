@@ -10,9 +10,9 @@ The W-Pre-market AMM is a system that enables trading of pre-market tokens befor
 
 - **Price Range Bounded Trading**: Trading occurs within a predefined price range (Pa to Pb)
 - **Specialized Bonding Curve**: Uses mathematical formulas to determine token prices
-- **Liquidity Provision**: LP providers can add liquidity with base tokens and receive LP tokens
+- **Liquidity Provision**: LP providers can add liquidity with base token and receive LP tokens
 - **Token Minting**: The system mints w-token when liquidity is added
-- **Trading**: Traders can buy and sell w-token using base tokens
+- **Trading**: Traders can buy and sell w-token using base token
 
 ## Mathematical Formulas
 
@@ -23,7 +23,7 @@ The system uses the following key formulas:
 L = x / (1/√Pa - 1/√Pb)
 ```
 Where:
-- x: Amount of base tokens
+- x: Amount of base token
 - Pa: Minimum price of pre-token
 - Pb: Maximum price of pre-token
 
@@ -33,7 +33,7 @@ x = L · (1/√P - 1/√Pb)
 y = L · (√P - √Pa)
 ```
 Where:
-- x: Amount of base tokens
+- x: Amount of base token
 - y: Amount of w-token
 - P: Current price
 - L: Liquidity constant
@@ -66,23 +66,23 @@ This repository contains the following PlantUML diagrams:
 - **Token Minter**: Creates new w-token when liquidity is added
 - **Liquidity Manager**: Manages the liquidity pool
 - **Swap Engine**: Handles token swaps
-- **Liquidity Pool**: Stores base tokens and w-token
+- **Liquidity Pool**: Stores base token and w-token
 
 ## User Types
 
-1. **LP Provider**: Provides liquidity with base tokens and defines price range (Pa to Pb)
-2. **Trader**: Trades base tokens for w-token or vice versa
+1. **LP Provider**: Provides liquidity with base token and defines price range (Pa to Pb)
+2. **Trader**: Trades base token for w-token or vice versa
 
 ## Workflow
 
 ### LP Provider Workflow
-1. LP provider adds base tokens (e.g., ETH, USDC) with parameters Pa and Pb
+1. LP provider adds base token (e.g., ETH, USDC) with parameters Pa and Pb
 2. System calculates the amount of w-token to mint using the formula
 3. System mints w-token and adds both tokens to the liquidity pool
 4. LP provider receives LP tokens representing their share of the pool
 
 ### Trader Workflow
-1. Trader sends base tokens to buy w-token (or vice versa)
+1. Trader sends base token to buy w-token (or vice versa)
 2. System calculates the output amount based on the bonding curve formula
 3. System exchanges the tokens and sends the output to the trader
 4. Price adjusts according to the bonding curve formula
