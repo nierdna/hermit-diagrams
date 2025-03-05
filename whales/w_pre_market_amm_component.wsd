@@ -42,7 +42,7 @@ interface "Swap Tokens" as ISwap
 interface "Price Oracle" as IPriceOracle
 interface "Collect Fees" as ICollectFees
 interface "Settlement" as ISettlement
-interface "Swap W-Token for Token" as ISwapForToken
+interface "Swap Pre-Token for Token" as ISwapForToken
 
 ' Connections
 LPProvider -- IAddLiquidity
@@ -95,22 +95,22 @@ end note
 note bottom of Pool
   Contains:
   - Base token (ETH, USDC, etc.)
-  - w-token
+  - pre-token
   - Real token (after TGE)
   - Current price information
   - Liquidity parameters (Pa, Pb)
 end note
 
 note bottom of Minter
-  Mints new w-token when:
+  Mints new pre-token when:
   - LP providers add liquidity
   - System needs to maintain price bounds
 end note
 
 note bottom of SwapEngine
   Handles:
-  - Buy w-token with base token
-  - Sell w-token for base token
+  - Buy pre-token with base token
+  - Sell pre-token for base token
   - Calculates price impact
   - Ensures trades follow bonding curve
 end note
@@ -118,14 +118,14 @@ end note
 note bottom of SettlementManager
   Manages settlement phase after TGE:
   - Handles LP withdrawal with token requirements
-  - Manages 1:1 swaps of w-token for real token
-  - Tracks collateral and initial w-token amounts
+  - Manages 1:1 swaps of pre-token for real token
+  - Tracks collateral and initial pre-token amounts
 end note
 
 note bottom of LPTrackers
   Tracks LP positions:
   - Collateral amounts
-  - Initial w-token amounts
+  - Initial pre-token amounts
   - Required token amounts for settlement
 end note
 
