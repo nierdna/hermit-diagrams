@@ -1,0 +1,296 @@
+@startuml Hermit SCA and veSCA Deposit Flow Sequence
+
+' Define participants
+actor User
+actor "Arbitrageur" as Arbitrageur
+participant "Hermit Protocol" as Hermit
+participant "SCA Manager" as SCAManager
+participant "veSCA Manager" as vESCAManager
+participant "hSCA Manager" as hSCAManager
+participant "Epoch Manager" as EpochManager
+participant "AMM Pool" as AMMPool
+participant "Scallop Protocol" as Scallop
+database "User Balances State" as UserBalances
+database "veSCA Lock State" as vESCALockState
+database "Liquidity Pool State" as LiquidityPoolState
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' SCA Deposit Flow
+group SCA Deposit Flow (1:1 Ratio)
+    User -> Hermit: 1. Deposit SCA
+    activate Hermit
+    
+    Hermit -> SCAManager: 2. Process SCA deposit
+    activate SCAManager
+    
+    SCAManager -> hSCAManager: 3. Mint hSCA (1:1 ratio)
+    activate hSCAManager
+    
+    hSCAManager -> UserBalances: 4. Update user's hSCA balance
+    hSCAManager --> SCAManager: Confirm hSCA minting
+    deactivate hSCAManager
+    
+    SCAManager -> UserBalances: 5. Record SCA deposit
+    SCAManager --> Hermit: Confirm SCA processing
+    deactivate SCAManager
+    
+    Hermit --> User: 6. Return hSCA tokens (1:1 ratio)
+    deactivate Hermit
+    
+    note right: User receives hSCA tokens at 1:1 ratio with deposited SCA
+end
+
+' veSCA Deposit Flow
+group veSCA Deposit Flow (Max Lock)
+    User -> Hermit: 1. Deposit veSCA
+    activate Hermit
+    
+    Hermit -> vESCAManager: 2. Process veSCA deposit
+    activate vESCAManager
+    
+    vESCAManager -> Scallop: 3. Max lock veSCA (4 years)
+    activate Scallop
+    
+    Scallop -> vESCALockState: 4. Update veSCA lock state
+    Scallop --> vESCAManager: Confirm max lock
+    deactivate Scallop
+    
+    vESCAManager -> UserBalances: 5. Record veSCA deposit with max lock
+    vESCAManager --> Hermit: Confirm veSCA processing
+    deactivate vESCAManager
+    
+    Hermit --> User: 6. Confirm veSCA max lock
+    deactivate Hermit
+    
+    note right: veSCA is locked for maximum period (4 years)
+end
+
+' SCA Accumulation Flow
+group SCA Accumulation to veSCA (Threshold: 1000 SCA)
+    User -> Hermit: 1. Deposit SCA
+    activate Hermit
+    
+    Hermit -> SCAManager: 2. Process SCA deposit
+    activate SCAManager
+    
+    SCAManager -> UserBalances: 3. Update user's SCA balance
+    
+    SCAManager -> UserBalances: 4. Check if SCA balance ≥ 1000
+    
+    alt SCA Balance ≥ 1000
+        SCAManager -> vESCAManager: 5a. Convert 1000 SCA to veSCA
+        activate vESCAManager
+        
+        vESCAManager -> Scallop: 6. Create veSCA with max lock (4 years)
+        activate Scallop
+        
+        Scallop -> vESCALockState: 7. Record new veSCA with max lock
+        Scallop --> vESCAManager: Return veSCA
+        deactivate Scallop
+        
+        vESCAManager -> UserBalances: 8. Update user's veSCA balance
+        vESCAManager -> UserBalances: 9. Reduce SCA balance by 1000
+        
+        vESCAManager --> SCAManager: Confirm veSCA creation
+        deactivate vESCAManager
+        
+        SCAManager --> Hermit: Notify SCA converted to veSCA
+    else SCA Balance < 1000
+        SCAManager -> hSCAManager: 5b. Mint hSCA (1:1 ratio)
+        activate hSCAManager
+        
+        hSCAManager -> UserBalances: Update user's hSCA balance
+        hSCAManager --> SCAManager: Confirm hSCA minting
+        deactivate hSCAManager
+        
+        SCAManager --> Hermit: Notify hSCA minted
+    end
+    
+    deactivate SCAManager
+    Hermit --> User: 10. Return transaction result
+    deactivate Hermit
+    
+    note right: When SCA accumulates to 1000, it's automatically converted to veSCA with max lock
+end
+
+' Automated veSCA Re-Max Lock Flow
+group Automated veSCA Re-Max Lock (Daily Epoch)
+    EpochManager -> EpochManager: 1. Daily epoch trigger
+    activate EpochManager
+    note right: Automated process runs once per day
+    
+    EpochManager -> vESCALockState: 2. Scan for veSCA locks
+    activate vESCALockState
+    
+    vESCALockState --> EpochManager: 3. Return veSCA locks with reduced time
+    deactivate vESCALockState
+    
+    EpochManager -> vESCAManager: 4. Request re-max lock for eligible veSCA
+    activate vESCAManager
+    
+    loop For each eligible veSCA
+        vESCAManager -> Scallop: 5. Re-max lock veSCA to 4 years
+        activate Scallop
+        
+        Scallop -> vESCALockState: 6. Update veSCA lock period
+        Scallop --> vESCAManager: 7. Confirm re-max lock
+        deactivate Scallop
+        
+        vESCAManager -> UserBalances: 8. Update user's veSCA lock status
+    end
+    
+    vESCAManager --> EpochManager: 9. Report re-max lock completion
+    deactivate vESCAManager
+    
+    EpochManager -> Hermit: 10. Update protocol state
+    deactivate EpochManager
+    
+    note right: All veSCA are automatically re-locked to maximum period (4 years) each epoch
+end
+
+' Non-Max Locked veSCA Exit Flow
+group Non-Max Locked veSCA Exit Flow
+    User -> Scallop: 1. User holds non-max locked veSCA
+    activate User
+    note right: User has veSCA with lock period < 4 years
+    
+    User -> Hermit: 2. Deposit non-max locked veSCA
+    activate Hermit
+    
+    Hermit -> vESCAManager: 3. Process veSCA deposit
+    activate vESCAManager
+    
+    vESCAManager -> Scallop: 4. Max lock veSCA (extend to 4 years)
+    activate Scallop
+    
+    Scallop -> vESCALockState: 5. Update veSCA lock state to max
+    Scallop --> vESCAManager: Confirm max lock
+    deactivate Scallop
+    
+    vESCAManager -> hSCAManager: 6. Request hSCA minting
+    activate hSCAManager
+    
+    hSCAManager -> UserBalances: 7. Mint hSCA based on veSCA value
+    hSCAManager --> vESCAManager: Confirm hSCA minting
+    deactivate hSCAManager
+    
+    vESCAManager -> UserBalances: 8. Record veSCA deposit with max lock
+    vESCAManager --> Hermit: Confirm veSCA processing
+    deactivate vESCAManager
+    
+    Hermit --> User: 9. Return hSCA tokens
+    deactivate Hermit
+    
+    User -> AMMPool: 10. Swap hSCA for SCA
+    activate AMMPool
+    
+    AMMPool -> LiquidityPoolState: 11. Calculate swap based on x*y=k
+    activate LiquidityPoolState
+    
+    LiquidityPoolState -> LiquidityPoolState: 12. Update pool state
+    LiquidityPoolState --> AMMPool: Return SCA amount
+    deactivate LiquidityPoolState
+    
+    AMMPool -> UserBalances: 13. Deduct hSCA from user
+    AMMPool -> UserBalances: 14. Add SCA to user
+    
+    AMMPool --> User: 15. Return SCA tokens
+    deactivate AMMPool
+    
+    note right: User has successfully exited non-max locked veSCA position
+    deactivate User
+end
+
+' AMM Liquidity Provision Flow
+group AMM Liquidity Provision (hSCA-SCA Pair)
+    User -> AMMPool: 1. Add liquidity (hSCA + SCA at 1:1 ratio)
+    activate AMMPool
+    
+    AMMPool -> LiquidityPoolState: 2. Initialize pool with x*y=k formula
+    activate LiquidityPoolState
+    
+    LiquidityPoolState -> LiquidityPoolState: 3. Set initial price (1:1)
+    LiquidityPoolState --> AMMPool: Confirm pool initialization
+    deactivate LiquidityPoolState
+    
+    AMMPool -> UserBalances: 4. Update user's LP token balance
+    AMMPool --> User: 5. Return LP tokens
+    deactivate AMMPool
+    
+    note right: Liquidity pool established with hSCA:SCA at 1:1 ratio
+end
+
+' hSCA to SCA Exit Flow
+group hSCA to SCA Exit (Swap)
+    User -> AMMPool: 1. Swap hSCA for SCA
+    activate AMMPool
+    
+    AMMPool -> LiquidityPoolState: 2. Calculate swap based on x*y=k
+    activate LiquidityPoolState
+    
+    LiquidityPoolState -> LiquidityPoolState: 3. Update pool state
+    LiquidityPoolState --> AMMPool: Return SCA amount
+    deactivate LiquidityPoolState
+    
+    AMMPool -> UserBalances: 4. Deduct hSCA from user
+    AMMPool -> UserBalances: 5. Add SCA to user
+    
+    AMMPool --> User: 6. Return SCA tokens
+    deactivate AMMPool
+    
+    note right: User exits Hermit by swapping hSCA for SCA
+end
+
+' Arbitrage Flow (When hSCA Price Drops)
+group Arbitrage When hSCA Price Drops
+    Arbitrageur -> AMMPool: 1. Detect hSCA price drop
+    activate Arbitrageur
+    
+    Arbitrageur -> AMMPool: 2. Swap SCA for hSCA (at discount)
+    activate AMMPool
+    
+    AMMPool -> LiquidityPoolState: 3. Calculate swap based on x*y=k
+    activate LiquidityPoolState
+    
+    LiquidityPoolState -> LiquidityPoolState: 4. Update pool state
+    LiquidityPoolState --> AMMPool: Return hSCA amount (more than 1:1)
+    deactivate LiquidityPoolState
+    
+    AMMPool -> UserBalances: 5. Deduct SCA from arbitrageur
+    AMMPool -> UserBalances: 6. Add hSCA to arbitrageur
+    
+    AMMPool --> Arbitrageur: 7. Return hSCA tokens (at discount)
+    deactivate AMMPool
+    
+    note right: Arbitrageur gets more hSCA per SCA due to price drop
+    
+    Arbitrageur -> Hermit: 8. Hold hSCA to earn yield
+    note right: Arbitrageur benefits from yield generated by hSCA
+    
+    Arbitrageur -> AMMPool: 9. Eventually swap back when price normalizes
+    note right: Market stabilizes as arbitrage restores price toward 1:1
+    deactivate Arbitrageur
+end
+
+' Add notes
+note over Hermit: Main protocol entry point
+note over SCAManager: Manages SCA deposits and conversions
+note over vESCAManager: Handles veSCA creation and locking
+note over hSCAManager: Mints hSCA tokens at 1:1 ratio
+note over EpochManager: Manages daily epoch transitions and automated processes
+note over AMMPool: Automated Market Maker for hSCA-SCA pair
+note over UserBalances: Tracks user's SCA, hSCA, and veSCA balances
+note over vESCALockState: Records veSCA lock periods
+note over LiquidityPoolState: Maintains AMM pool state with x*y=k formula
+note over Scallop: External protocol for veSCA locking
+note over Arbitrageur: Market participant who profits from price inefficiencies
+
+@enduml 

@@ -5,6 +5,7 @@ actor User
 participant "Fund Contract" as Fund
 participant "Fund Manager" as FundManager
 participant "Sub Accounts" as SubAccounts
+participant "hSCA Manager" as hSCAManager
 participant "Reward Manager" as RewardManager
 participant "Epoch Snapshot Manager" as SnapshotManager
 database "Epoch Snapshots" as EpochSnapshots
@@ -34,10 +35,23 @@ group Deposit Flow
     
     activate FundManager
     FundManager -> SubAccounts: 2. Split into equal amounts
-    FundManager -> Obligations: 3. Create Obligations (USDC as collateral)
+    SubAccounts -> Obligations: 3. Create Obligations (USDC as collateral)
     deactivate FundManager
     
-    Obligations -> LendingPool: 4. Borrow USDC
+    Obligations -> LendingPool: 4. Borrow USDT
+end
+
+' APR Boosting Flow
+group APR Boosting with veSCA
+    hSCAManager -> SubAccounts: Assign veSCA to sub account
+    activate hSCAManager
+    note right: Each sub account can receive one veSCA
+    
+    SubAccounts -> SubAccounts: Apply APR boost multiplier
+    note right: Boosted APR based on veSCA formula
+    
+    hSCAManager -> RewardPool: Register boosted sub account
+    deactivate hSCAManager
 end
 
 ' Reward Flow
@@ -48,7 +62,7 @@ group Reward Distribution (Per Epoch)
     activate RewardManager
     
     RewardManager -> LendingPool: 6. Swap portion of rewards
-    note right: Maintain borrowed USDC amount
+    note right: Maintain borrowed USDT amount
     
     RewardManager -> TotalReward: Update total reward
     deactivate RewardManager
@@ -64,9 +78,10 @@ end
 ' Add notes
 note over Fund: Smart Contract holding user deposits
 note over FundManager: Manages fund distribution
+note over hSCAManager: Manages veSCA tokens for APR boosting
 note over RewardManager: Manages reward harvesting and swapping
 note over Obligations: Hermit owns these obligations
-note over LendingPool: Provides USDC lending
+note over LendingPool: Provides USDT lending
 note over RewardPool: Distributes sSUI and sScallop
 note over TotalReward: Tracks accumulated rewards
 note over UserBalances: Tracks individual user deposits
