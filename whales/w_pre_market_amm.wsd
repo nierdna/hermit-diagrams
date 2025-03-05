@@ -21,14 +21,14 @@ skinparam sequence {
 note left of LPProvider
   <b>Key Formulas:</b>
   
-  <b>Thanh khoản (Liquidity):</b>
+  <b>Liquidity:</b>
   L = x / (1/√Pa - 1/√Pb)
   
-  <b>Tại giá P:</b>
+  <b>At price P:</b>
   x = L · (1/√P - 1/√Pb)
   y = L · (√P - √Pa)
   
-  <b>Công thức tổng quát:</b>
+  <b>General formula:</b>
   y = x · (√Pb - √Pa) / (1/√Pa - 1/√Pb)
 end note
 
