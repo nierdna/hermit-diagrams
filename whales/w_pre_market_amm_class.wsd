@@ -17,31 +17,31 @@ class WPreMarketAMM {
     - liquidityPools: Map<TokenPair, LiquidityPool>
     + addLiquidity(baseToken, Pa, Pb, amount): uint256
     + removeLiquidity(lpTokens): (uint256, uint256)
-    + swapBaseForWPre(baseAmount): uint256
-    + swapWPreForBase(wPreAmount): uint256
+    + swapBaseForWToken(baseAmount): uint256
+    + swapWTokenForBase(wTokenAmount): uint256
     + getPrice(): uint256
     + getLiquidity(): uint256
 }
 
 class LiquidityPool {
     - baseToken: Token
-    - wPreToken: Token
+    - wToken: Token
     - baseReserve: uint256
-    - wPreReserve: uint256
+    - wTokenReserve: uint256
     - minPrice: uint256 (Pa)
     - maxPrice: uint256 (Pb)
     - liquidity: uint256 (L)
     - lpToken: LPToken
     - feeGrowthGlobalBase: uint256
-    - feeGrowthGlobalWPre: uint256
+    - feeGrowthGlobalWToken: uint256
     - protocolFeePercentage: uint256
     
     + addLiquidity(baseAmount, Pa, Pb): (uint256, uint256)
     + removeLiquidity(lpTokens): (uint256, uint256)
-    + swapBaseForWPre(baseAmount): uint256
-    + swapWPreForBase(wPreAmount): uint256
+    + swapBaseForWToken(baseAmount): uint256
+    + swapWTokenForBase(wTokenAmount): uint256
     + calculateLiquidity(x, Pa, Pb): uint256
-    + calculateWPreAmount(x, Pa, Pb): uint256
+    + calculateWTokenAmount(x, Pa, Pb): uint256
     + getCurrentPrice(): uint256
     + collectFees(lpTokenId): (uint256, uint256)
     + calculateFees(lpTokenId): (uint256, uint256)
@@ -49,15 +49,15 @@ class LiquidityPool {
 
 class PriceCalculator {
     + calculateLiquidity(x, Pa, Pb): uint256
-    + calculateWPreAmount(x, Pa, Pb): uint256
+    + calculateWTokenAmount(x, Pa, Pb): uint256
     + calculateBaseAmount(y, Pa, Pb): uint256
-    + calculateCurrentPrice(baseReserve, wPreReserve, Pa, Pb): uint256
+    + calculateCurrentPrice(baseReserve, wTokenReserve, Pa, Pb): uint256
     + calculateSwapOutput(inputAmount, inputReserve, outputReserve, Pa, Pb): uint256
 }
 
 class TokenMinter {
-    + mintWPreTokens(amount): Token
-    + burnWPreTokens(amount): void
+    + mintWTokens(amount): Token
+    + burnWTokens(amount): void
 }
 
 class Token {
@@ -81,9 +81,9 @@ class LPToken {
     - lowerPriceBound: uint256 (Pa)
     - upperPriceBound: uint256 (Pb)
     - feeGrowthInsideLastBase: uint256
-    - feeGrowthInsideLastWPre: uint256
+    - feeGrowthInsideLastWToken: uint256
     - tokensOwedBase: uint256
-    - tokensOwedWPre: uint256
+    - tokensOwedWToken: uint256
     
     + mint(to, amount, Pa, Pb): void
     + burn(from, amount): void
@@ -93,13 +93,13 @@ class LPToken {
 class User {
     - address: Address
     - baseTokenBalance: uint256
-    - wPreTokenBalance: uint256
+    - wTokenBalance: uint256
     - lpTokenBalance: uint256
     
     + addLiquidity(baseAmount, Pa, Pb): void
     + removeLiquidity(lpAmount): void
-    + swapBaseForWPre(baseAmount): void
-    + swapWPreForBase(wPreAmount): void
+    + swapBaseForWToken(baseAmount): void
+    + swapWTokenForBase(wTokenAmount): void
 }
 
 class FeeManager {
@@ -138,12 +138,12 @@ end note
 
 note bottom of LiquidityPool
   The liquidity pool maintains the bonding curve
-  relationship between base tokens and w-pre-tokens
+  relationship between base tokens and w-token
   according to the mathematical formulas.
 end note
 
 note bottom of TokenMinter
-  Creates new w-pre-tokens when liquidity is added
+  Creates new w-token when liquidity is added
   and burns them when liquidity is removed.
 end note
 

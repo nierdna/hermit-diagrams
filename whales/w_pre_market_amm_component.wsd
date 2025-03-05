@@ -83,21 +83,21 @@ end note
 note bottom of Pool
   Contains:
   - Base tokens (ETH, USDC, etc.)
-  - w-pre-tokens
+  - w-token
   - Current price information
   - Liquidity parameters (Pa, Pb)
 end note
 
 note bottom of Minter
-  Mints new w-pre-tokens when:
+  Mints new w-token when:
   - LP providers add liquidity
   - System needs to maintain price bounds
 end note
 
 note bottom of SwapEngine
   Handles:
-  - Buy w-pre-tokens with base tokens
-  - Sell w-pre-tokens for base tokens
+  - Buy w-token with base tokens
+  - Sell w-token for base tokens
   - Calculates price impact
   - Ensures trades follow bonding curve
 end note

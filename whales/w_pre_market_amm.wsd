@@ -44,23 +44,23 @@ group LP Provider Adds Liquidity
     
     Calculator -> Calculator: Calculate L = x / (1/√Pa - 1/√Pb)
     Calculator -> Calculator: Calculate y = x · (√Pb - √Pa) / (1/√Pa - 1/√Pb)
-    Calculator --> AMM: Return y (amount of w-pre-token needed)
+    Calculator --> AMM: Return y (amount of w-token needed)
     deactivate Calculator
     
-    AMM -> Minter: Request to mint y w-pre-tokens
+    AMM -> Minter: Request to mint y w-token
     activate Minter
-    Minter --> AMM: Return newly minted w-pre-tokens
+    Minter --> AMM: Return newly minted w-token
     deactivate Minter
     
-    AMM -> Pool: Add x base tokens + y w-pre-tokens to pool
+    AMM -> Pool: Add x base tokens + y w-token to pool
     AMM --> LPProvider: Issue LP tokens representing share of pool
     
     deactivate AMM
 end
 
-' Trader Flow - Buy w-pre-tokens
-group Trader Buys w-pre-tokens
-    Trader -> AMM: Buy w-pre-tokens with x base tokens
+' Trader Flow - Buy w-tokens
+group Trader Buys w-tokens
+    Trader -> AMM: Buy w-tokens with x base tokens
     activate AMM
     
     AMM -> FeeManager: Calculate fee (e.g., 0.3% of x)
@@ -72,11 +72,11 @@ group Trader Buys w-pre-tokens
     activate Calculator
     
     Calculator -> Calculator: Calculate current price based on pool ratio
-    Calculator -> Calculator: Calculate output w-pre-tokens based on formula
-    Calculator --> AMM: Return output amount of w-pre-tokens
+    Calculator -> Calculator: Calculate output w-token based on formula
+    Calculator --> AMM: Return output amount of w-token
     deactivate Calculator
     
-    AMM -> Pool: Update base tokens and w-pre-tokens according to formula
+    AMM -> Pool: Update base tokens and w-token according to formula
     
     AMM -> FeeManager: Update fee growth trackers
     activate FeeManager
@@ -84,14 +84,14 @@ group Trader Buys w-pre-tokens
     FeeManager --> AMM: Confirm fee tracking update
     deactivate FeeManager
     
-    AMM --> Trader: Send w-pre-tokens to trader
+    AMM --> Trader: Send w-token to trader
     
     deactivate AMM
 end
 
-' Trader Flow - Sell w-pre-tokens
-group Trader Sells w-pre-tokens
-    Trader -> AMM: Sell y w-pre-tokens
+' Trader Flow - Sell w-tokens
+group Trader Sells w-tokens
+    Trader -> AMM: Sell y w-tokens
     activate AMM
     
     AMM -> Calculator: Calculate output amount
@@ -102,7 +102,7 @@ group Trader Sells w-pre-tokens
     Calculator --> AMM: Return output amount of base tokens
     deactivate Calculator
     
-    AMM -> Pool: Remove base tokens and w-pre-tokens according to formula
+    AMM -> Pool: Remove base tokens and w-tokens according to formula
     AMM --> Trader: Send base tokens to trader
     
     deactivate AMM
@@ -118,11 +118,11 @@ group LP Provider Collects Fees
     
     FeeManager -> FeeTrackers: Get fee growth since last collection
     FeeManager -> FeeManager: Calculate fees owed based on liquidity share
-    FeeManager --> AMM: Return uncollected fees (base tokens, w-pre-tokens)
+    FeeManager --> AMM: Return uncollected fees (base tokens, w-token)
     deactivate FeeManager
     
     AMM -> Pool: Withdraw fee amounts
-    AMM --> LPProvider: Send collected fees (base tokens, w-pre-tokens)
+    AMM --> LPProvider: Send collected fees (base tokens, w-token)
     
     AMM -> FeeManager: Update position's fee tracking data
     activate FeeManager
@@ -135,11 +135,11 @@ end
 
 ' Add notes
 note over AMM: Automated Market Maker for pre-market tokens
-note over Pool: Contains base tokens (ETH, USDC, etc.) and w-pre-tokens
+note over Pool: Contains base tokens (ETH, USDC, etc.) and w-token
 note over Calculator: Implements the bonding curve formulas
-note over Minter: Creates new w-pre-tokens when liquidity is added
+note over Minter: Creates new w-token when liquidity is added
 note over LPProvider: Provides liquidity with base tokens and price range (Pa to Pb)
-note over Trader: Trades base tokens for w-pre-tokens or vice versa
+note over Trader: Trades base tokens for w-token or vice versa
 note over FeeManager: Tracks and manages fee collection for LP positions
 note over FeeTrackers: Stores fee growth data for each price range
 
