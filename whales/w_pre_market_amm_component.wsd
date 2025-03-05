@@ -24,7 +24,9 @@ package "W-Pre-market AMM System" {
     component [Token Minter] as Minter
     component [Liquidity Manager] as LiquidityManager
     component [Swap Engine] as SwapEngine
+    component [Fee Manager] as FeeManager
     database "Liquidity Pool" as Pool
+    database "Fee Growth Trackers" as FeeTrackers
 }
 
 ' External actors
@@ -36,15 +38,18 @@ interface "Add Liquidity" as IAddLiquidity
 interface "Remove Liquidity" as IRemoveLiquidity
 interface "Swap Tokens" as ISwap
 interface "Price Oracle" as IPriceOracle
+interface "Collect Fees" as ICollectFees
 
 ' Connections
 LPProvider -- IAddLiquidity
 LPProvider -- IRemoveLiquidity
+LPProvider -- ICollectFees
 Trader -- ISwap
 Core -- IPriceOracle
 
 IAddLiquidity - LiquidityManager
 IRemoveLiquidity - LiquidityManager
+ICollectFees - FeeManager
 ISwap - SwapEngine
 IPriceOracle - Calculator
 
@@ -52,8 +57,12 @@ Core --> Calculator : uses
 Core --> Minter : uses
 Core --> LiquidityManager : uses
 Core --> SwapEngine : uses
+Core --> FeeManager : uses
 LiquidityManager --> Pool : manages
 SwapEngine --> Pool : reads/updates
+SwapEngine --> FeeManager : calculates fees
+FeeManager --> FeeTrackers : updates
+FeeManager --> Pool : collects from
 Calculator --> Pool : reads state
 
 ' Notes with formulas
