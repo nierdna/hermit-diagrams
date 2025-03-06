@@ -1,0 +1,121 @@
+@startuml W-LP Collateral Economic Model
+
+' Define participants
+actor "LP Provider" as LPProvider
+actor "Trader" as Trader
+participant "W-Pre-market AMM" as AMM
+database "Liquidity Pool" as Pool
+participant "Settlement Manager" as Settlement
+participant "Risk Management Module" as RiskModule
+participant "Oracle" as Oracle
+participant "Treasury" as Treasury
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Risk assessment before TGE
+group Pre-TGE Risk Assessment
+    Settlement -> RiskModule: Request risk assessment
+    activate RiskModule
+    RiskModule -> Pool: Get total pre-token supply
+    RiskModule -> Pool: Get total collateral amount
+    RiskModule -> RiskModule: Calculate collateral-to-pre-token ratio
+    RiskModule -> RiskModule: Assess LP provider reliability metrics
+    RiskModule -> RiskModule: Calculate estimated forfeiture risk
+    RiskModule --> Settlement: Return risk assessment
+    deactivate RiskModule
+    
+    note right of RiskModule: Risk assessment includes:\n- Historical LP compliance rates\n- Market conditions\n- Token project health metrics\n- Estimated forfeiture percentage
+end
+
+' Insurance fund setup
+group Insurance Fund Mechanism
+    Settlement -> Treasury: Request insurance fund allocation
+    activate Treasury
+    Treasury -> RiskModule: Get risk assessment
+    Treasury -> Treasury: Calculate required insurance fund size
+    Treasury -> Pool: Allocate insurance fund
+    Treasury --> Settlement: Confirm insurance fund setup
+    deactivate Treasury
+    
+    note right of Treasury: Insurance fund serves as backup\nto protect pre-token holders\nin case of significant forfeitures
+end
+
+' Dynamic strategy selection based on market conditions
+group Dynamic Strategy Selection
+    Settlement -> Settlement: Detect collateral forfeiture
+    activate Settlement
+    
+    Settlement -> Oracle: Request current token market data
+    Oracle --> Settlement: Return token price and liquidity data
+    
+    Settlement -> RiskModule: Request optimal strategy
+    activate RiskModule
+    RiskModule -> RiskModule: Analyze market conditions
+    RiskModule -> RiskModule: Calculate token purchase impact
+    RiskModule -> RiskModule: Determine optimal distribution ratio
+    RiskModule --> Settlement: Return recommended strategy
+    deactivate RiskModule
+    
+    alt Favorable Market Conditions for Token Purchase
+        Settlement -> Settlement: Allocate higher percentage for token purchase
+    else Unfavorable Market Conditions
+        Settlement -> Settlement: Allocate higher percentage for direct distribution
+    end
+    
+    Settlement -> Settlement: Execute selected strategy
+    deactivate Settlement
+end
+
+' Economic outcomes for different stakeholders
+group Economic Outcomes
+    note over Settlement: Analysis of economic outcomes for different stakeholders
+    
+    ' LP Provider outcome
+    LPProvider -> Settlement: Query forfeited collateral status
+    activate Settlement
+    Settlement --> LPProvider: Return forfeiture confirmation
+    deactivate Settlement
+    note right of LPProvider: LP Provider loses collateral\ndue to non-compliance
+    
+    ' Trader outcomes with hybrid approach
+    Trader -> AMM: Redeem pre-token
+    activate AMM
+    AMM -> Settlement: Process redemption with hybrid approach
+    activate Settlement
+    Settlement -> Settlement: Calculate token and base token entitlements
+    Settlement -> Pool: Process redemption
+    Settlement --> AMM: Return redemption results
+    deactivate Settlement
+    AMM --> Trader: Deliver tokens and/or base token compensation
+    deactivate AMM
+    
+    note right of Trader: Trader receives combination of:\n1. Real tokens (from purchased supply)\n2. Base token compensation\n3. Possible insurance fund coverage
+end
+
+' Protocol fee and sustainability
+group Protocol Sustainability
+    Settlement -> Settlement: Calculate protocol fee from forfeiture
+    activate Settlement
+    Settlement -> Treasury: Transfer protocol fee portion
+    Settlement -> Pool: Allocate remaining to pre-token holders
+    deactivate Settlement
+    
+    note right of Treasury: Small percentage of forfeited collateral\ngoes to protocol treasury for sustainability\nand future insurance fund replenishment
+end
+
+' Add notes
+note over AMM: Automated Market Maker for pre-market tokens
+note over Pool: Contains base token (ETH, USDC, etc.), pre-token, and real token
+note over Settlement: Manages settlement phase after TGE
+note over RiskModule: Analyzes risks and recommends optimal strategies
+note over Oracle: Provides market data for informed decision-making
+note over Treasury: Manages protocol funds and insurance mechanisms
+
+@enduml 

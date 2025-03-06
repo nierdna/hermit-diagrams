@@ -1,0 +1,99 @@
+@startuml W-LP Collateral Deadline Mechanism
+
+' Define participants
+actor "LP Provider" as LPProvider
+participant "W-Pre-market AMM" as AMM
+database "Liquidity Pool" as Pool
+participant "Settlement Manager" as Settlement
+database "LP Position Trackers" as LPTrackers
+participant "Governance" as Governance
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Initial setup of deadline
+group Settlement Phase Initialization
+    Governance -> Settlement: Set token deposit deadline parameters
+    activate Settlement
+    Settlement -> Settlement: Store deadline duration
+    Settlement -> Settlement: Store grace period parameters
+    Settlement -> Settlement: Store penalty escalation schedule
+    deactivate Settlement
+    
+    note right of Settlement: Deadline parameters could include:\n- Base deadline (e.g., 7 days after TGE)\n- Grace period with increasing penalties\n- Final cutoff for total forfeiture
+end
+
+' Notification system
+group LP Provider Notifications
+    Settlement -> LPTrackers: Identify LP positions requiring token deposits
+    activate Settlement
+    Settlement -> LPProvider: Send initial deposit requirement notification
+    
+    loop Until deadline
+        Settlement -> Settlement: Check time remaining
+        Settlement -> LPProvider: Send reminder notifications
+    end
+    
+    Settlement -> LPProvider: Send final warning before deadline
+    deactivate Settlement
+end
+
+' Grace period with escalating penalties
+group Grace Period with Escalating Penalties
+    note over Settlement: LP Provider missed initial deadline
+    
+    Settlement -> Settlement: Enter grace period for LP position
+    activate Settlement
+    Settlement -> Settlement: Calculate initial penalty (e.g., 5% of collateral)
+    Settlement -> LPProvider: Notify of penalty and remaining grace period
+    
+    loop During grace period
+        alt LP Provider Deposits Tokens
+            LPProvider -> AMM: Deposit required tokens
+            AMM -> Settlement: Process late token deposit
+            Settlement -> Settlement: Calculate final penalty based on delay
+            Settlement -> Pool: Apply penalty to collateral
+            Settlement -> Pool: Return remaining collateral to LP Provider
+            Settlement -> LPTrackers: Update position status to settled
+        else Grace Period Expires
+            Settlement -> Settlement: Mark position for full collateral forfeiture
+            Settlement -> LPTrackers: Update position status to forfeited
+            Settlement -> LPProvider: Notify of complete collateral forfeiture
+        end
+    end
+    deactivate Settlement
+end
+
+' Final forfeiture process
+group Collateral Forfeiture Process
+    Settlement -> LPTrackers: Get all forfeited positions
+    activate Settlement
+    Settlement -> Pool: Calculate total forfeited collateral
+    Settlement -> Settlement: Trigger forfeiture handling strategy
+    
+    alt Small Forfeiture Amount
+        Settlement -> Settlement: Apply default handling strategy
+    else Significant Forfeiture Amount
+        Settlement -> Governance: Request decision on handling strategy
+        Governance -> Settlement: Provide strategy decision
+    end
+    
+    Settlement -> Settlement: Execute selected strategy
+    Settlement -> LPTrackers: Mark positions as fully processed
+    deactivate Settlement
+end
+
+' Add notes
+note over AMM: Automated Market Maker for pre-market tokens
+note over Pool: Contains base token (ETH, USDC, etc.), pre-token, and real token
+note over Settlement: Manages settlement phase after TGE
+note over LPTrackers: Tracks LP positions, collateral and initial pre-token amounts
+note over Governance: Protocol governance that can make strategic decisions
+
+@enduml 

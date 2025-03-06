@@ -1,0 +1,141 @@
+@startuml W-LP Collateral Forfeiture Handling
+
+' Define participants
+actor "LP Provider" as LPProvider
+actor "Trader" as Trader
+participant "W-Pre-market AMM" as AMM
+database "Liquidity Pool" as Pool
+participant "Settlement Manager" as Settlement
+database "LP Position Trackers" as LPTrackers
+participant "Token Exchange" as Exchange
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Scenario: LP Provider doesn't deposit tokens and forfeits collateral
+group LP Provider Forfeits Collateral (Deadline Passed)
+    note over LPProvider, Settlement: LP Provider did not deposit required tokens before deadline
+    
+    Settlement -> LPTrackers: Check for expired LP positions
+    activate Settlement
+    Settlement -> LPTrackers: Get list of LP positions with missing token deposits
+    Settlement -> Pool: Mark collateral as forfeited
+    Settlement -> Settlement: Calculate total forfeited collateral
+    Settlement -> Settlement: Record forfeited positions
+    deactivate Settlement
+end
+
+' Solution 1: Distribute forfeited collateral proportionally to pre-token holders
+group Solution 1: Proportional Distribution to Pre-Token Holders
+    note over Settlement: Forfeited collateral distributed proportionally to pre-token holders
+    
+    Trader -> AMM: Request to redeem pre-token
+    activate AMM
+    
+    AMM -> Settlement: Process pre-token redemption
+    activate Settlement
+    Settlement -> Pool: Get total pre-token supply
+    Settlement -> Pool: Get trader's pre-token balance
+    Settlement -> Settlement: Calculate share = trader_balance / total_supply
+    Settlement -> Settlement: Calculate compensation = share * total_forfeited_collateral
+    Settlement -> Pool: Burn pre-token
+    Settlement -> Pool: Transfer compensation (base token) to trader
+    Settlement --> AMM: Return compensation amount
+    deactivate Settlement
+    
+    AMM --> Trader: Send compensation (partial value in base token)
+    deactivate AMM
+    
+    note right of Trader: Trader receives proportional share of forfeited collateral\ninstead of real tokens (partial compensation)
+end
+
+' Solution 2: AMM uses forfeited collateral to buy tokens from market
+group Solution 2: Market Purchase of Tokens
+    note over Settlement: AMM uses forfeited collateral to purchase real tokens from market
+    
+    Settlement -> Settlement: Determine total tokens needed for pre-token holders
+    activate Settlement
+    Settlement -> Exchange: Use forfeited collateral to purchase tokens
+    Exchange --> Settlement: Return purchased tokens
+    Settlement -> Pool: Add purchased tokens to pool
+    deactivate Settlement
+    
+    Trader -> AMM: Request to redeem pre-token
+    activate AMM
+    
+    AMM -> Settlement: Process pre-token to token swap
+    activate Settlement
+    Settlement -> Pool: Get available token ratio = purchased_tokens / total_pre_tokens
+    Settlement -> Pool: Burn pre-token
+    Settlement -> Pool: Transfer available real tokens to trader (based on ratio)
+    Settlement --> AMM: Return token amount
+    deactivate Settlement
+    
+    AMM --> Trader: Send real tokens (possibly at reduced ratio)
+    deactivate AMM
+    
+    note right of Trader: Trader receives real tokens but possibly at a reduced ratio\ndepending on market price when tokens were purchased
+end
+
+' Recommended Solution: Hybrid Approach
+group Recommended Solution: Hybrid Approach with Governance
+    note over Settlement: Hybrid approach with governance decision
+    
+    Settlement -> Settlement: Detect significant collateral forfeiture
+    activate Settlement
+    Settlement -> Settlement: Initiate governance vote on handling strategy
+    deactivate Settlement
+    
+    note over Settlement: Governance votes on strategy:
+    note over Settlement: 1. Set aside reserve % for direct token purchases
+    note over Settlement: 2. Allocate % for proportional distribution
+    
+    Settlement -> Settlement: Execute governance decision
+    activate Settlement
+    
+    alt Token Purchase with Reserve
+        Settlement -> Exchange: Use reserve portion to purchase tokens
+        Exchange --> Settlement: Return purchased tokens
+        Settlement -> Pool: Add purchased tokens to pool
+    end
+    
+    alt Proportional Distribution with Remaining Collateral
+        Settlement -> Pool: Allocate remaining collateral for distribution
+    end
+    
+    deactivate Settlement
+    
+    Trader -> AMM: Request to redeem pre-token
+    activate AMM
+    
+    AMM -> Settlement: Process pre-token redemption
+    activate Settlement
+    Settlement -> Pool: Get trader's pre-token balance
+    Settlement -> Pool: Calculate token entitlement from purchased tokens
+    Settlement -> Pool: Calculate base token entitlement from remaining collateral
+    Settlement -> Pool: Burn pre-token
+    Settlement -> Pool: Transfer token entitlement to trader
+    Settlement -> Pool: Transfer base token entitlement to trader
+    Settlement --> AMM: Return redemption amounts
+    deactivate Settlement
+    
+    AMM --> Trader: Send tokens + base token compensation
+    deactivate AMM
+    
+    note right of Trader: Trader receives combination of real tokens and base token compensation
+end
+
+' Add notes
+note over AMM: Automated Market Maker for pre-market tokens
+note over Pool: Contains base token (ETH, USDC, etc.), pre-token, and real token
+note over Settlement: Manages settlement phase after TGE
+note over LPTrackers: Tracks LP positions, collateral and initial pre-token amounts
+note over Exchange: External token exchange/market
+
+@enduml 
