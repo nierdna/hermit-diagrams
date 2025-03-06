@@ -11,6 +11,7 @@ participant "Fee Manager" as FeeManager
 database "Fee Trackers" as FeeTrackers
 participant "Settlement Manager" as Settlement
 database "LP Position Trackers" as LPTrackers
+participant "Early Withdrawal Handler" as EarlyWithdrawal
 
 ' Style
 skinparam sequence {
@@ -137,6 +138,47 @@ group LP Provider Collects Fees
     deactivate AMM
 end
 
+' Add a new flow for LP Provider withdrawing liquidity before settlement phase
+group LP Provider Withdraws Liquidity Before Settlement
+    LPProvider -> AMM: Request to withdraw liquidity early (LP token ID)
+    activate AMM
+    
+    AMM -> EarlyWithdrawal: Process early withdrawal request
+    activate EarlyWithdrawal
+    
+    EarlyWithdrawal -> LPTrackers: Get initial pre-token amount
+    EarlyWithdrawal -> Pool: Get current pre-token balance for position
+    EarlyWithdrawal -> EarlyWithdrawal: Compare current vs initial pre-token
+    
+    alt Current pre-token < Initial pre-token
+        note over EarlyWithdrawal: LP Provider has less pre-token than initially minted
+        EarlyWithdrawal -> EarlyWithdrawal: Calculate penalty = (initial - current) * penalty rate
+        EarlyWithdrawal -> Pool: Apply penalty to collateral
+        EarlyWithdrawal -> Pool: Remove liquidity (base token - penalty)
+        EarlyWithdrawal -> Pool: Return remaining collateral (collateral - penalty)
+        EarlyWithdrawal --> AMM: Return base token (minus penalty) and remaining collateral
+        
+        AMM --> LPProvider: Send base token (minus penalty) and remaining collateral
+        note right: LP Provider receives less than full collateral due to penalty
+    else Current pre-token > Initial pre-token
+        note over EarlyWithdrawal: LP Provider has more pre-token than initially minted (profit)
+        EarlyWithdrawal -> Pool: Remove liquidity (base token)
+        EarlyWithdrawal -> Pool: Return full collateral
+        EarlyWithdrawal -> Pool: Calculate excess pre-token = current - initial
+        EarlyWithdrawal -> Pool: Convert excess pre-token to base token bonus
+        EarlyWithdrawal --> AMM: Return base token, collateral, and bonus
+        
+        AMM --> LPProvider: Send base token, full collateral, and bonus
+        note right: LP Provider receives full collateral plus bonus
+    end
+    
+    EarlyWithdrawal -> Pool: Burn LP tokens
+    EarlyWithdrawal --> AMM: Confirm withdrawal completed
+    deactivate EarlyWithdrawal
+    
+    deactivate AMM
+end
+
 ' Add a new flow for settlement phase
 group Enter Settlement Phase (After TGE)
     note over AMM, Settlement: System enters settlement phase after token generation event (TGE)
@@ -206,5 +248,6 @@ note over FeeManager: Tracks and manages fee collection for LP positions
 note over FeeTrackers: Stores fee growth data for each price range
 note over Settlement: Manages settlement phase after TGE
 note over LPTrackers: Tracks LP positions, collateral and initial pre-token amounts
+note over EarlyWithdrawal: Handles early withdrawal before settlement phase with penalties or bonuses
 
 @enduml 
