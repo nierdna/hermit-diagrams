@@ -1,0 +1,72 @@
+@startuml W-Settle Ended Phase
+
+' Define participants
+actor "LP Provider" as LPProvider
+actor "Trader" as Trader
+participant "W-Pre-market AMM" as AMM
+database "Liquidity Pool" as Pool
+participant "Settlement Manager" as Settlement
+database "LP Position Trackers" as LPTrackers
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Add a new flow for LP Provider withdrawal in settlement phase
+group LP Provider Withdraws Liquidity in Settlement Phase
+    LPProvider -> AMM: Request to withdraw liquidity (LP token ID)
+    activate AMM
+    
+    AMM -> Settlement: Calculate required token amount
+    activate Settlement
+    Settlement -> LPTrackers: Get initial pre-token amount
+    Settlement -> Pool: Get current pre-token balance for position
+    Settlement -> Settlement: Calculate required token = initial pre-token - current pre-token
+    Settlement --> AMM: Return required token amount
+    deactivate Settlement
+    
+    AMM --> LPProvider: Request required token amount
+    LPProvider -> AMM: Provide required token amount
+    
+    AMM -> Settlement: Process liquidity removal
+    activate Settlement
+    Settlement -> Pool: Remove liquidity
+    Settlement -> Pool: Return collateral
+    Settlement -> Pool: Add provided tokens
+    Settlement --> AMM: Return base token + collateral
+    deactivate Settlement
+    
+    AMM --> LPProvider: Send base token + collateral
+    
+    deactivate AMM
+end
+
+' Add a new flow for Trader swapping pre-token for real token
+group Trader Swaps Pre-Token for Token
+    Trader -> AMM: Swap pre-token for token (1:1)
+    activate AMM
+    
+    AMM -> Settlement: Process pre-token to token swap
+    activate Settlement
+    Settlement -> Pool: Burn pre-token
+    Settlement -> Pool: Transfer real token to trader
+    Settlement --> AMM: Confirm swap completed
+    deactivate Settlement
+    
+    AMM --> Trader: Send real token (1:1 ratio)
+    
+    deactivate AMM
+end
+
+' Add notes
+note over AMM: Automated Market Maker for pre-market tokens
+note over Pool: Contains base token (ETH, USDC, etc.), pre-token, and real token
+note over Settlement: Manages settlement phase after TGE
+note over LPTrackers: Tracks LP positions, collateral and initial pre-token amounts
+
+@enduml 
