@@ -165,11 +165,11 @@ group LP Provider Withdraws Liquidity Before Settlement
         EarlyWithdrawal -> Pool: Remove liquidity (base token)
         EarlyWithdrawal -> Pool: Return full collateral
         EarlyWithdrawal -> Pool: Calculate excess pre-token = current - initial
-        EarlyWithdrawal -> Pool: Convert excess pre-token to base token bonus
-        EarlyWithdrawal --> AMM: Return base token, collateral, and bonus
+        EarlyWithdrawal -> Pool: Transfer this pre-token to LP Provider
+        EarlyWithdrawal --> AMM: Return base token, collateral, and pre-token
         
-        AMM --> LPProvider: Send base token, full collateral, and bonus
-        note right: LP Provider receives full collateral plus bonus
+        AMM --> LPProvider: Send base token, full collateral, and pre-token
+        note right: LP Provider receives full collateral plus pre-token, which can be converted to token when settlement phase has ended
     end
     
     EarlyWithdrawal -> Pool: Burn LP tokens
