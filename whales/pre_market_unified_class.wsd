@@ -35,6 +35,7 @@ class "PreMarketUnified" as PreMarketUnified {
     - activeNetwork
     - evmSigner
     - solanaSigner
+    - tokenInfoCache: Map<string, TokenInfo>
     
     ' Constructor and initialization
     + constructor()
@@ -45,6 +46,10 @@ class "PreMarketUnified" as PreMarketUnified {
     + setActiveNetwork(network)
     + getActiveNetwork()
     + getActiveSDK()
+    
+    ' Token information methods
+    + getTokenInfo(tokenAddress: string): Promise<TokenInfo>
+    + cacheTokenInfo(tokenAddress: string, info: TokenInfo): void
     
     ' Unified transaction methods
     + createOffer(tokenId, type, exToken, amount, price, isFullyMatch)
@@ -77,6 +82,7 @@ PreMarketUnified "1" o-- "0..1" PreMarketSolanaSDK : contains
 PreMarketUnified "1" o-- "*" PreMarketEvmSDK : contains
 PreMarketUnified ..> BlockchainType : uses
 PreMarketUnified ..> NetworkType : uses
+PreMarketUnified ..> TokenInfo : uses
 
 note right of PreMarketUnified
   Unified SDK for interacting with Pre-market across blockchains
@@ -85,6 +91,7 @@ note right of PreMarketUnified
   - Manages signers for different blockchains
   - Handles parameter and response conversions
   - Only one network active at a time
+  - Maintains token information across blockchains
 end note
 
 ' note bottom of PreMarketUnified::convertParams

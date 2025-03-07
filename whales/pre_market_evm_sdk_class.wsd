@@ -12,7 +12,25 @@ skinparam note {
     BorderColor Black
 }
 
-class PreMarketEvmSDK {
+abstract class PreMarketSDKBase {
+    # tokenInfo: Map<string, TokenInfo>
+    
+    ' Token information structure
+    + getTokenInfo(tokenAddress: string): TokenInfo
+    + addTokenInfo(tokenAddress: string, info: TokenInfo): void
+    + updateTokenInfo(tokenAddress: string, info: Partial<TokenInfo>): void
+    + hasTokenInfo(tokenAddress: string): boolean
+}
+
+class TokenInfo {
+    + address: string
+    + decimals: number
+    + symbol: string
+    + name: string
+    + uri: string
+}
+
+class PreMarketEvmSDK extends PreMarketSDKBase {
     - name: string
     - contract: PreMarket
     - providers: ethers.Provider[]
@@ -24,6 +42,7 @@ class PreMarketEvmSDK {
     - bootstrap(): Promise<void>
     - getRandomProvider(): ethers.Provider
     - getContractWithRandomProvider(): PreMarket
+    + fetchTokenInfo(tokenAddress: string): Promise<TokenInfo>
 
     ' Transaction builders
     + buildNewOfferTx(offerType: number, tokenId: string, amount: number, value: number, exToken: string, fullMatch: boolean): Promise<Transaction>
@@ -78,6 +97,9 @@ class PreMarketEvmSDK {
     + buildSettle2StepsBatchTx(orderIds: number[], hashes: string[]): Promise<Transaction>
 }
 
+PreMarketEvmSDK --|> PreMarketSDKBase
+PreMarketEvmSDK ..> TokenInfo : uses
+
 note right of PreMarketEvmSDK
   SDK for interacting with Pre-market smart contract
   - Handles transaction building
@@ -85,6 +107,21 @@ note right of PreMarketEvmSDK
   - Supports multiple providers
   - Includes role-based access control
   - Handles settlements and offers
+  - Maintains token information
+end note
+
+note right of TokenInfo
+  Stores essential token information:
+  - Contract address
+  - Token decimals
+  - Symbol and name
+  - Token URI (metadata)
+end note
+
+note right of PreMarketSDKBase
+  Abstract base class for Pre-market SDKs
+  - Provides common token information management
+  - Standardizes interfaces across blockchains
 end note
 
 @enduml 

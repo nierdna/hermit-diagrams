@@ -12,7 +12,9 @@ skinparam note {
     BorderColor Black
 }
 
-class PreMarketSolanaSDK {
+!include pre_market_evm_sdk_class.wsd
+
+class PreMarketSolanaSDK extends PreMarketSDKBase {
     - connection: Connection
     - program: anchor.Program<PreMarketType>
     - configAccountPubKey: PublicKey
@@ -22,6 +24,7 @@ class PreMarketSolanaSDK {
     + constructor(connection: Connection, programId: string)
     + bootstrap(configAccountPubKey: string): Promise<void>
     + fetchConfigAccount(configAccountPubKey: string, commitment?: anchor.web3.Commitment): Promise<anchor.IdlAccounts<PreMarketType>['configAccount']>
+    + fetchTokenInfo(tokenAddress: string): Promise<TokenInfo>
 
     ' Config and token management
     + createConfigAccount(signer: PublicKey, feeWallet: PublicKey): Promise<Transaction>
@@ -70,6 +73,9 @@ class PreMarketSolanaSDK {
     + getLatestSignature(): Promise<string | undefined>
 }
 
+PreMarketSolanaSDK --|> PreMarketSDKBase
+PreMarketSolanaSDK ..> TokenInfo : uses
+
 note right of PreMarketSolanaSDK
   SDK for interacting with Pre-market Solana program
   - Handles transaction building for Solana blockchain
@@ -77,6 +83,7 @@ note right of PreMarketSolanaSDK
   - Supports offer and order management
   - Includes role-based access control
   - Provides transaction history and event parsing
+  - Maintains token information
 end note
 
 @enduml 
