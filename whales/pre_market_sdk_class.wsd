@@ -1,0 +1,90 @@
+@startuml W-Pre-market EVM SDK Class Diagram
+
+' Style
+skinparam class {
+    BackgroundColor LightBlue
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+class PreMarketSDK {
+    - name: string
+    - contract: PreMarket
+    - providers: ethers.Provider[]
+    - contractAddress: string
+    - isBootstrapped: boolean
+
+    ' Constructor and initialization
+    + constructor(rpcUrls: string | string[], contractAddress?: string)
+    - bootstrap(): Promise<void>
+    - getRandomProvider(): ethers.Provider
+    - getContractWithRandomProvider(): PreMarket
+
+    ' Transaction builders
+    + buildNewOfferTx(offerType: number, tokenId: string, amount: number, value: number, exToken: string, fullMatch: boolean): Promise<Transaction>
+    + buildNewOfferETHTx(offerType: number, tokenId: string, amount: number, value: number, fullMatch: boolean): Promise<Transaction>
+    + buildFillOfferTx(offerId: number, amount: number): Promise<Transaction>
+    + buildFillOfferETHTx(offerId: number, amount: number): Promise<Transaction>
+    + buildCancelOfferTx(offerId: number): Promise<Transaction>
+    + buildCancelOffersTx(offerIds: number[]): Promise<Transaction>
+    + buildCreateTokenTx(tokenId: string, settleDuration: number): Promise<Transaction>
+    + buildCancelTokenTx(tokenId: string): Promise<Transaction>
+    + buildFrizeTokenTx(tokenId: string): Promise<Transaction>
+    + buildSetLockTokenTx(tokenId: string, setLock: boolean): Promise<Transaction>
+    + buildTokenToSettlePhaseTx(tokenId: string, tokenAddress: string, settleRate: number): Promise<Transaction>
+    + buildTokenForceCancelSettlePhaseTx(tokenId: string): Promise<Transaction>
+    + buildUpdateSettleDurationTx(tokenId: string, newValue: number): Promise<Transaction>
+    + buildSetAcceptedTokensTx(tokenAddresses: string[], isAccepted: boolean): Promise<Transaction>
+    + buildUpdateConfigTx(feeWallet: string, feeSettle: number, feeRefund: number, pledgeRate: number): Promise<Transaction>
+    + buildWithdrawLiquidETHTx(amount: number): Promise<Transaction>
+    + buildWithdrawLiquidTokenTx(token: string, amount: number): Promise<Transaction>
+    + buildWithdrawStuckTokenTx(token: string, to: string): Promise<Transaction>
+
+    ' Read methods
+    + getConfig(): Promise<Config>
+    + getOffers(id: number): Promise<Offer>
+    + getOrders(id: number): Promise<Order>
+    + getTokens(tokenId: string): Promise<Token>
+    + isAcceptedToken(token: string): Promise<boolean>
+    + isLocked(tokenId: string): Promise<boolean>
+    + isBuyOffer(offerId: number): Promise<boolean>
+    + isSellOffer(offerId: number): Promise<boolean>
+    + getLastOfferId(): Promise<number>
+    + getLastOrderId(): Promise<number>
+    + getOfferAmount(offerId: number): Promise<number>
+    + getOfferAmountAvailable(offerId: number): Promise<number>
+    + getOfferValue(offerId: number): Promise<number>
+    + getOfferExToken(offerId: number): Promise<string>
+    + getOfferStatus(offerId: number): Promise<number>
+    + getOrderStatus(orderId: number): Promise<number>
+
+    ' Role management
+    + hasRole(role: string, account: string): Promise<boolean>
+    + buildGrantRoleTx(role: string, account: string): Promise<Transaction>
+    + buildRevokeRoleTx(role: string, account: string): Promise<Transaction>
+    + buildRenounceRoleTx(role: string, callerConfirmation: string): Promise<Transaction>
+
+    ' Settlement methods
+    + buildSettleFilledTx(orderId: number): Promise<Transaction>
+    + buildSettleFilledWithDiscountTx(orderId: number, discount: SettleDiscount): Promise<Transaction>
+    + buildSettleCancelledTx(orderId: number): Promise<Transaction>
+    + buildSettleCancelledWithDiscountTx(orderId: number, discount: SettleDiscount): Promise<Transaction>
+    + buildSettle2StepsTx(orderId: number, hash: string): Promise<Transaction>
+    + buildSettle2StepsBatchTx(orderIds: number[], hashes: string[]): Promise<Transaction>
+}
+
+note right of PreMarketSDK
+  SDK for interacting with Pre-market smart contract
+  - Handles transaction building
+  - Manages contract reads
+  - Supports multiple providers
+  - Includes role-based access control
+  - Handles settlements and offers
+end note
+
+@enduml 

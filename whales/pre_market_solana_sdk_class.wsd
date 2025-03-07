@@ -1,0 +1,82 @@
+@startuml W-Pre-market Solana SDK Class Diagram
+
+' Style
+skinparam class {
+    BackgroundColor LightGreen
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+class PreMarketSolanaSDK {
+    - connection: Connection
+    - program: anchor.Program<PreMarketType>
+    - configAccountPubKey: PublicKey
+    - configAccount: anchor.IdlAccounts<PreMarketType>['configAccount']
+
+    ' Constructor and initialization
+    + constructor(connection: Connection, programId: string)
+    + bootstrap(configAccountPubKey: string): Promise<void>
+    + fetchConfigAccount(configAccountPubKey: string, commitment?: anchor.web3.Commitment): Promise<anchor.IdlAccounts<PreMarketType>['configAccount']>
+
+    ' Config and token management
+    + createConfigAccount(signer: PublicKey, feeWallet: PublicKey): Promise<Transaction>
+    + updateConfigAccount(data: {feeRefund?: BN, feeSettle?: BN, nativePledgeRate?: BN, feeWallet?: PublicKey}): Promise<Transaction>
+    + createTokenConfig(id: number, settleDuration: number, pledgeRate: number, category: TokenCategory, admin: PublicKey): Promise<Transaction>
+    + reallocTokenConfig(id: number, signer: PublicKey): Promise<Transaction>
+    + updateTokenConfig(id: number, data: {status?: TokenStatus, settleDuration?: BN, pledgeRate?: BN, settleRate?: BN, feeRefund?: BN, feeSettle?: BN}): Promise<Transaction>
+    + updateTokenAddress(id: number, token: PublicKey): Promise<Transaction>
+    + tokenToSettlePhase(id: number, settleRate: number | null, token: PublicKey, admin: PublicKey): Promise<Transaction>
+    + fetchTokenConfigAccount(id: number): Promise<anchor.IdlAccounts<PreMarketType>['tokenConfigAccount']>
+
+    ' Exchange token management
+    + setExToken(token: PublicKey, is_accepted: boolean): Promise<Transaction>
+    + fetchExTokenAccount(token: PublicKey): Promise<anchor.IdlAccounts<PreMarketType>['exTokenAccount']>
+
+    ' Offer management
+    + findIdOffer(): Promise<number>
+    + createOffer(tokenId: number, type: 'buy' | 'sell', exToken: PublicKey, amount: number, price: number, is_fully_match: boolean, user: PublicKey): Promise<Transaction>
+    + fetchOfferAccount(id: number, commitment?: anchor.web3.Commitment): Promise<anchor.IdlAccounts<PreMarketType>['offerAccount']>
+    + closeUnFullFilledOffer(id: number): Promise<Transaction>
+
+    ' Order management
+    + findIdOrder(): Promise<number>
+    + fillOffer(offerId: number, amount: number, user: PublicKey): Promise<Transaction>
+    + fetchOrderAccount(id: number, commitment?: anchor.web3.Commitment): Promise<anchor.IdlAccounts<PreMarketType>['orderAccount']>
+    + cancelOrder(id: number): Promise<Transaction>
+    + cancelUnfilledOrder(id: number): Promise<Transaction>
+    + cancelOrderWithDiscount(id: number, settleVerifier: PublicKey, buyerFeeDiscount: BN): Promise<Transaction>
+
+    ' Settlement
+    + settleOrder(id: number): Promise<Transaction>
+    + settleOrderWithDiscount(id: number, settleVerifier: PublicKey, buyerFeeDiscount: BN, sellerFeeDiscount: BN): Promise<Transaction>
+    + settleOrderTwoStep(id: number, operator: PublicKey): Promise<Transaction>
+
+    ' Role management
+    + setRole(signer: PublicKey, user: PublicKey, role: Role): Promise<Transaction>
+    + fetchRoleAccount(user: PublicKey, commitment?: anchor.web3.Commitment): Promise<anchor.IdlAccounts<PreMarketType>['roleAccount']>
+
+    ' Transaction history and events
+    - getProgramSignatures(params?: {before?: string, until?: string, limit?: number}): Promise<string[]>
+    - splitTransactions(signatures: string[]): Promise<Array<string[]>>
+    + parseTransactions(signatures: string[]): Promise<web3.ParsedTransactionWithMeta[]>
+    + getTransactions(params?: {beforeSignature?: string, untilSignature?: string, limit?: number}): Promise<{data: Array<string[]>, latestSignature?: string}>
+    + parseEvent(transactionParsed: web3.ParsedTransactionWithMeta)
+    + parseEvents(transactionsParsed: web3.ParsedTransactionWithMeta[])
+    + getLatestSignature(): Promise<string | undefined>
+}
+
+note right of PreMarketSolanaSDK
+  SDK for interacting with Pre-market Solana program
+  - Handles transaction building for Solana blockchain
+  - Manages program accounts and state
+  - Supports offer and order management
+  - Includes role-based access control
+  - Provides transaction history and event parsing
+end note
+
+@enduml 
