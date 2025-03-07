@@ -1,0 +1,98 @@
+@startuml W-Pre-market-Unified-Class-Diagram
+
+' Style
+skinparam class {
+    BackgroundColor LightBlue
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+!include pre_market_evm_sdk_class.wsd
+!include pre_market_solana_sdk_class.wsd
+
+enum BlockchainType {
+    EVM
+    SOLANA
+}
+
+enum NetworkType {
+    ETHEREUM
+    BSC
+    POLYGON
+    SOLANA
+    ARBITRUM
+    OPTIMISM
+}
+
+class "PreMarketUnified" as PreMarketUnified {
+    - solanaSDK
+    - evmSDKs
+    - activeNetwork
+    - evmSigner
+    - solanaSigner
+    
+    ' Constructor and initialization
+    + constructor(evmSigner, solanaSigner)
+    + registerEVMSDK(network, rpcUrl, contractAddress)
+    + registerSolanaSDK(rpcUrl, programId, configAccountPubKey)
+    + setActiveNetwork(network)
+    + getActiveNetwork()
+    + getActiveSDK()
+    
+    ' Unified transaction methods
+    + createOffer(tokenId, type, exToken, amount, price, isFullyMatch)
+    + fillOffer(offerId, amount)
+    + cancelOffer(offerId)
+    + createToken(tokenId, settleDuration, pledgeRate, category)
+    + tokenToSettlePhase(tokenId, tokenAddress, settleRate)
+    + settleOrder(orderId)
+    + settleOrderWithDiscount(orderId, discount)
+    + cancelOrder(orderId)
+    + updateConfig(config)
+    + setRole(user, role)
+    
+    ' Unified read methods
+    + getOffer(id)
+    + getOrder(id)
+    + getToken(tokenId)
+    + getConfig()
+    
+    ' Transaction signing and sending
+    + signAndSendTransaction(transaction)
+    
+    ' Helper methods
+    - convertParams(params, targetType)
+    - convertResponse(response, sourceType)
+}
+
+' Relationships
+PreMarketUnified "1" o-- "0..1" PreMarketSolanaSDK : contains
+PreMarketUnified "1" o-- "*" PreMarketEvmSDK : contains
+PreMarketUnified ..> BlockchainType : uses
+PreMarketUnified ..> NetworkType : uses
+
+note right of PreMarketUnified
+  Unified SDK for interacting with Pre-market across blockchains
+  - Abstracts blockchain-specific implementations
+  - Provides consistent interface for all networks
+  - Manages signers for different blockchains
+  - Handles parameter and response conversions
+  - Only one network active at a time
+end note
+
+' note bottom of PreMarketUnified::convertParams
+'   Converts parameters from unified format
+'   to blockchain-specific format
+' end note
+
+' note bottom of PreMarketUnified::convertResponse
+'   Converts responses from blockchain-specific format
+'   to unified format for consistent handling
+' end note
+
+@enduml 
