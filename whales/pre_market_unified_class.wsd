@@ -37,7 +37,9 @@ class "PreMarketUnified" as PreMarketUnified {
     - solanaSigner
     
     ' Constructor and initialization
-    + constructor(evmSigner, solanaSigner)
+    + constructor()
+    + registerEVMSigner(signer)
+    + registerSolanaSigner(signer)
     + registerEVMSDK(network, rpcUrl, contractAddress)
     + registerSolanaSDK(rpcUrl, programId, configAccountPubKey)
     + setActiveNetwork(network)
