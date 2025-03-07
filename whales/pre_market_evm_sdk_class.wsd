@@ -12,7 +12,7 @@ skinparam note {
     BorderColor Black
 }
 
-class PreMarketSDK {
+class PreMarketEvmSDK {
     - name: string
     - contract: PreMarket
     - providers: ethers.Provider[]
@@ -78,7 +78,7 @@ class PreMarketSDK {
     + buildSettle2StepsBatchTx(orderIds: number[], hashes: string[]): Promise<Transaction>
 }
 
-note right of PreMarketSDK
+note right of PreMarketEvmSDK
   SDK for interacting with Pre-market smart contract
   - Handles transaction building
   - Manages contract reads
