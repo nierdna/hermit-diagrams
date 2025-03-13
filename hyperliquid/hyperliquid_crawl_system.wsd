@@ -1,0 +1,76 @@
+@startuml Hyperliquid Event Crawl System
+
+' Define participants
+actor "Hyperliquid API" as HyperliquidAPI
+participant "Crawler Service" as Crawler
+participant "Data Filter Service" as DataFilter
+participant "Data Enricher Service" as DataEnricher
+database "Event Database" as EventDB
+queue "Message Queue" as MessageQueue
+participant "Load Balancer" as LoadBalancer
+participant "Cache Layer" as Cache
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    QueueBackgroundColor LightYellow
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Initial Event Crawling Flow
+group Event Crawling Flow
+    LoadBalancer -> Crawler: Distribute load across crawler instances
+    activate Crawler
+    
+    Crawler -> HyperliquidAPI: 1. Listen for events
+    HyperliquidAPI -> Crawler: 2. Stream events
+    
+    Crawler -> MessageQueue: 3. Push raw events
+    deactivate Crawler
+    
+    MessageQueue -> DataFilter: 4. Consume raw events
+    activate DataFilter
+    
+    DataFilter -> DataFilter: 5. Apply filtering logic
+    note right: Remove unnecessary data\nReduce data volume
+    
+    DataFilter -> MessageQueue: 6. Push filtered events
+    deactivate DataFilter
+    
+    MessageQueue -> DataEnricher: 7. Consume filtered events
+    activate DataEnricher
+    
+    DataEnricher -> Cache: 8. Check if additional data exists in cache
+    Cache -> DataEnricher: Return cached data (if exists)
+    
+    DataEnricher -> HyperliquidAPI: 9. Request additional data (if needed)
+    HyperliquidAPI -> DataEnricher: Return additional data
+    
+    DataEnricher -> Cache: 10. Update cache with new data
+    
+    DataEnricher -> DataEnricher: 11. Enrich and normalize data
+    
+    DataEnricher -> EventDB: 12. Store enriched data
+    deactivate DataEnricher
+end
+
+' Scaling Strategy
+group Horizontal Scaling
+    note over LoadBalancer: Distributes traffic across\nmultiple service instances
+    note over MessageQueue: Buffers data between services\nAllows asynchronous processing
+    note over Cache: Reduces API calls to Hyperliquid\nImproves response time
+    note over EventDB: Implements sharding for\nhigh-volume data storage
+end
+
+' Add notes
+note over Crawler: Listens to Hyperliquid events\nCan be scaled horizontally
+note over DataFilter: Filters and cleans raw data\nReduces data volume
+note over DataEnricher: Enriches data with additional context\nNormalizes data structure
+note over EventDB: Stores processed events\nImplements sharding for scalability
+note over MessageQueue: Acts as buffer between services\nProvides fault tolerance
+note over Cache: Caches frequently accessed data\nReduces external API calls
+
+@enduml 

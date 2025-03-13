@@ -1,0 +1,97 @@
+@startuml W-Pre-market-Unified-Sequence-Diagram
+
+' Style
+skinparam sequenceArrowThickness 2
+skinparam sequenceGroupBorderThickness 2
+skinparam sequenceGroupBackgroundColor LightYellow
+skinparam sequenceGroupBorderColor Black
+skinparam sequenceParticipantBackgroundColor LightBlue
+skinparam sequenceParticipantBorderColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceLifeLineBackgroundColor White
+skinparam sequenceBoxBackgroundColor LightGreen
+skinparam sequenceBoxBorderColor Black
+skinparam sequenceArrowColor Black
+skinparam sequenceMessageAlignment center
+
+' Participants
+actor "Client Application" as Client
+participant "PreMarketUnified SDK" as UnifiedSDK
+participant "PreMarketEvmSDK" as EvmSDK
+participant "PreMarketSolanaSDK" as SolanaSDK
+
+' Sequence for calling a function
+group Function Call Flow
+    Client -> UnifiedSDK: call function (e.g., createOffer())
+    activate UnifiedSDK
+    
+    UnifiedSDK -> UnifiedSDK: getActiveNetwork()
+    UnifiedSDK -> UnifiedSDK: getActiveSDK()
+    
+    alt Active Network is EVM-based (Ethereum, BSC, etc.)
+        UnifiedSDK -> UnifiedSDK: convertParams(params, BlockchainType.EVM)
+        UnifiedSDK -> EvmSDK: call corresponding function
+        activate EvmSDK
+        EvmSDK --> UnifiedSDK: return result
+        deactivate EvmSDK
+        UnifiedSDK -> UnifiedSDK: convertResponse(response, BlockchainType.EVM)
+    else Active Network is Solana
+        UnifiedSDK -> UnifiedSDK: convertParams(params, BlockchainType.SOLANA)
+        UnifiedSDK -> SolanaSDK: call corresponding function
+        activate SolanaSDK
+        SolanaSDK --> UnifiedSDK: return result
+        deactivate SolanaSDK
+        UnifiedSDK -> UnifiedSDK: convertResponse(response, BlockchainType.SOLANA)
+    end
+    
+    UnifiedSDK --> Client: return unified result
+    deactivate UnifiedSDK
+end
+
+' Sequence for switching active network
+group Switch Active Network Flow
+    Client -> UnifiedSDK: setActiveNetwork(network)
+    activate UnifiedSDK
+    
+    UnifiedSDK -> UnifiedSDK: validate network
+    
+    alt Network is EVM-based (Ethereum, BSC, etc.)
+        UnifiedSDK -> UnifiedSDK: Check if EVMSigner is registered for this network
+        
+        alt EVMSigner not registered for this network
+            UnifiedSDK --> Client: Error: No signer registered for this network
+        else EVMSigner registered
+            UnifiedSDK -> UnifiedSDK: Set activeNetwork = network
+            UnifiedSDK --> Client: Success: Network switched to EVM network
+        end
+        
+    else Network is Solana
+        UnifiedSDK -> UnifiedSDK: Check if SolanaSigner is registered
+        
+        alt SolanaSigner not registered
+            UnifiedSDK --> Client: Error: No Solana signer registered
+        else SolanaSigner registered
+            UnifiedSDK -> UnifiedSDK: Set activeNetwork = NetworkType.SOLANA
+            UnifiedSDK --> Client: Success: Network switched to Solana
+        end
+    end
+    
+    deactivate UnifiedSDK
+end
+
+' Sequence for registering signers
+group Register Signers Flow
+    Client -> UnifiedSDK: registerEVMSigner(signer)
+    activate UnifiedSDK
+    UnifiedSDK -> UnifiedSDK: Store EVM signer
+    UnifiedSDK --> Client: Success: EVM signer registered
+    deactivate UnifiedSDK
+    
+    Client -> UnifiedSDK: registerSolanaSigner(signer)
+    activate UnifiedSDK
+    UnifiedSDK -> UnifiedSDK: Store Solana signer
+    UnifiedSDK --> Client: Success: Solana signer registered
+    deactivate UnifiedSDK
+end
+
+@enduml 

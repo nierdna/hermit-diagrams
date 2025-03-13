@@ -1,0 +1,95 @@
+@startuml Hyperliquid Event Crawl System - Component Diagram
+
+' Style
+skinparam {
+    ComponentBackgroundColor LightBlue
+    DatabaseBackgroundColor LightPink
+    QueueBackgroundColor LightYellow
+    InterfaceBackgroundColor LightGreen
+    ArrowColor Black
+    BorderColor Gray
+}
+
+' Components
+package "Hyperliquid Ecosystem" {
+    [Hyperliquid API] as API
+}
+
+package "Data Ingestion Layer" {
+    [Load Balancer] as LB
+    [Crawler Service] as Crawler
+    [Message Queue 1] as MQ1
+    
+    LB -down-> Crawler : "Route requests"
+    Crawler -down-> MQ1 : "Push raw events"
+}
+
+package "Data Processing Layer" {
+    [Data Filter Service] as Filter
+    [Message Queue 2] as MQ2
+    [Data Enricher Service] as Enricher
+    [Cache Layer] as Cache
+    
+    MQ1 -down-> Filter : "Consume raw events"
+    Filter -down-> MQ2 : "Push filtered events"
+    MQ2 -down-> Enricher : "Consume filtered events"
+    Enricher -right-> Cache : "Cache lookup/update"
+    Enricher -up-> API : "Request additional data"
+}
+
+package "Data Storage Layer" {
+    database "Event Database" as DB {
+        [Primary Shard] as DB1
+        [Secondary Shard] as DB2
+    }
+    
+    Enricher -down-> DB : "Store enriched data"
+}
+
+package "Monitoring & Management" {
+    [Metrics Collector] as Metrics
+    [Alert Manager] as Alerts
+    [Service Discovery] as Discovery
+    
+    Metrics -up-> Crawler : "Monitor"
+    Metrics -up-> Filter : "Monitor"
+    Metrics -up-> Enricher : "Monitor"
+    Metrics -right-> Alerts : "Trigger alerts"
+    Discovery -up-> LB : "Register services"
+}
+
+' External connections
+API -down-> Crawler : "Stream events"
+
+' Notes
+note right of Crawler
+  Listens to Hyperliquid events
+  Multiple instances for scaling
+end note
+
+note right of Filter
+  Filters and cleans raw data
+  Reduces data volume
+end note
+
+note right of Enricher
+  Enriches data with additional context
+  Normalizes data structure
+end note
+
+note bottom of DB
+  Sharded for high-volume storage
+  Optimized for read/write operations
+end note
+
+note bottom of Cache
+  Reduces API calls
+  Improves response time
+end note
+
+note bottom of MQ1
+  Buffers between services
+  Provides fault tolerance
+end note
+
+@enduml 

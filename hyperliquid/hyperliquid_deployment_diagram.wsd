@@ -1,0 +1,140 @@
+@startuml Hyperliquid Event Crawl System - Deployment Diagram
+
+' Style
+skinparam {
+    NodeBackgroundColor LightBlue
+    DatabaseBackgroundColor LightPink
+    CloudBackgroundColor LightCyan
+    ArrowColor Black
+    BorderColor Gray
+}
+
+' Cloud Infrastructure
+cloud "Cloud Infrastructure" {
+    node "Kubernetes Cluster" as K8s {
+        frame "Crawler Deployment" {
+            [Crawler Pod 1] as CP1
+            [Crawler Pod 2] as CP2
+            [Crawler Pod 3] as CP3
+        }
+        
+        frame "Data Filter Deployment" {
+            [Filter Pod 1] as FP1
+            [Filter Pod 2] as FP2
+        }
+        
+        frame "Data Enricher Deployment" {
+            [Enricher Pod 1] as EP1
+            [Enricher Pod 2] as EP2
+        }
+        
+        node "Load Balancer" as LB
+        
+        node "Service Discovery" as SD
+        
+        node "Monitoring" {
+            [Prometheus] as Prom
+            [Grafana] as Graf
+        }
+    }
+    
+    node "Message Queue Cluster" as MQCluster {
+        database "Kafka Broker 1" as KB1
+        database "Kafka Broker 2" as KB2
+        database "Kafka Broker 3" as KB3
+    }
+    
+    node "Cache Cluster" as CacheCluster {
+        database "Redis Master" as RM
+        database "Redis Replica 1" as RR1
+        database "Redis Replica 2" as RR2
+    }
+    
+    node "Database Cluster" as DBCluster {
+        database "Primary DB" as PDB
+        database "Read Replica 1" as RDB1
+        database "Read Replica 2" as RDB2
+    }
+}
+
+' External Systems
+cloud "Hyperliquid Network" {
+    [Hyperliquid API] as API
+}
+
+' Connections
+LB --> CP1
+LB --> CP2
+LB --> CP3
+
+CP1 --> KB1 : "Push events"
+CP2 --> KB1 : "Push events"
+CP3 --> KB1 : "Push events"
+
+KB1 --> FP1 : "Consume events"
+KB1 --> FP2 : "Consume events"
+
+FP1 --> KB2 : "Push filtered events"
+FP2 --> KB2 : "Push filtered events"
+
+KB2 --> EP1 : "Consume filtered events"
+KB2 --> EP2 : "Consume filtered events"
+
+EP1 --> RM : "Cache lookup/update"
+EP2 --> RM : "Cache lookup/update"
+
+EP1 --> PDB : "Store data"
+EP2 --> PDB : "Store data"
+
+EP1 --> API : "Request additional data"
+EP2 --> API : "Request additional data"
+
+PDB --> RDB1 : "Replicate"
+PDB --> RDB2 : "Replicate"
+
+RM --> RR1 : "Replicate"
+RM --> RR2 : "Replicate"
+
+SD --> LB : "Register services"
+
+Prom --> CP1 : "Collect metrics"
+Prom --> CP2 : "Collect metrics"
+Prom --> CP3 : "Collect metrics"
+Prom --> FP1 : "Collect metrics"
+Prom --> FP2 : "Collect metrics"
+Prom --> EP1 : "Collect metrics"
+Prom --> EP2 : "Collect metrics"
+Prom --> KB1 : "Collect metrics"
+Prom --> KB2 : "Collect metrics"
+Prom --> KB3 : "Collect metrics"
+Prom --> PDB : "Collect metrics"
+Prom --> RM : "Collect metrics"
+
+Graf --> Prom : "Visualize metrics"
+
+' Notes
+note right of K8s
+  Kubernetes orchestrates containers
+  Auto-scaling based on load
+  Self-healing capabilities
+end note
+
+note right of MQCluster
+  Kafka provides reliable message delivery
+  Topics for raw and filtered events
+  Consumer groups for parallel processing
+end note
+
+note right of CacheCluster
+  Redis caches API responses
+  Reduces external API calls
+  Improves response time
+end note
+
+note right of DBCluster
+  Database sharding for scalability
+  Read replicas for query performance
+  Time-series optimized storage
+end note
+
+@enduml 
