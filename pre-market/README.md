@@ -1,7 +1,7 @@
-# FoxNest
+# Pre-Market
 
 <p align="center">
-  <img src="assets/foxnest-logo.png" alt="FoxNest Logo" width="200" />
+  <img src="assets/pre-market-logo.png" alt="Pre-Market Logo" width="200" />
 </p>
 
 <p align="center">
@@ -23,9 +23,9 @@
 
 ## Overview
 
-FoxNest is a decentralized pre-market trading platform built on blockchain technology through smart contracts. The platform provides a secure and transparent solution for users wanting to trade tokens before the TGE (Token Generation Event).
+Pre-Market is a decentralized pre-market trading platform built on blockchain technology through smart contracts. The platform provides a secure and transparent solution for users wanting to trade tokens before the TGE (Token Generation Event).
 
-With FoxNest, investors can participate in early-stage markets while being protected by a collateral system and market pricing mechanisms.
+With Pre-Market, investors can participate in early-stage markets while being protected by a collateral system and market pricing mechanisms.
 
 ## Key Features
 
@@ -100,14 +100,14 @@ With FoxNest, investors can participate in early-stage markets while being prote
 
 ## Contact
 
-- **Website**: [foxnest.finance](https://foxnest.finance)
-- **Twitter**: [@FoxNestFinance](https://twitter.com/FoxNestFinance)
-- **Telegram**: [t.me/FoxNestCommunity](https://t.me/FoxNestCommunity)
-- **Email**: support@foxnest.finance
-- **Github**: [github.com/foxnest-finance](https://github.com/foxnest-finance)
+- **Website**: [pre-market.finance](https://pre-market.finance)
+- **Twitter**: [@Pre-MarketFinance](https://twitter.com/Pre-MarketFinance)
+- **Telegram**: [t.me/Pre-MarketCommunity](https://t.me/Pre-MarketCommunity)
+- **Email**: support@pre-market.finance
+- **Github**: [github.com/pre-market-finance](https://github.com/pre-market-finance)
 
 ---
 
 <p align="center">
-  <strong>FoxNest - Unlocking the Potential of Pre-TGE Markets</strong>
+  <strong>Pre-Market - Unlocking the Potential of Pre-TGE Markets</strong>
 </p> 

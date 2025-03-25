@@ -1,10 +1,10 @@
-@startuml FoxNest-Sequence-Diagram
+@startuml Pre-Market-Sequence-Diagram
 
-title FoxNest - Decentralized Pre-Market Trading Platform
+title Pre-Market - Decentralized Pre-Market Trading Platform
 
 actor "User (Buyer)" as Buyer
 actor "User (Seller)" as Seller
-participant "FoxNest Platform" as Platform
+participant "Pre-Market Platform" as Platform
 participant "Blockchain" as Blockchain
 participant "Smart Contract" as Contract
 
