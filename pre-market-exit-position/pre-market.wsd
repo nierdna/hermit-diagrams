@@ -1,0 +1,41 @@
+@startuml Pre-Token Escrow Smart Contract
+actor "Offer Creator" as Creator
+actor "Offer Filler" as Filler
+actor "Buyer" as Buyer
+actor "Seller" as Seller
+participant "Pre-Token Escrow Smart Contract" as Contract
+
+== Creating Offer ==
+Creator -> Contract: createOffer(type, amount, price, collateral)
+note right: type can be buy/sell
+Contract -> Contract: storeOffer()
+Contract -> Creator: lockCollateral(collateral amount)
+Contract --> Creator: return offerID
+
+== Filling Offer ==
+Filler -> Contract: fillOffer(offerID, collateral)
+Contract -> Contract: validateOffer(offerID)
+Contract -> Contract: createOrder(offerID)
+Contract -> Filler: lockCollateral(collateral amount)
+Contract --> Filler: return orderID
+note right: At this point, buyer and seller roles are assigned based on offer type
+
+== At TGE Time (Token Generation Event) ==
+alt Successful Settlement
+    Seller -> Contract: settleOrder(orderID, tokens)
+    Contract -> Contract: validateOrder(orderID)
+    Contract -> Contract: validateSettlementPeriod()
+    Contract -> Buyer: transferTokens(tokens)
+    Contract -> Seller: releaseCollateral(seller collateral)
+    Contract -> Seller: transferCollateralBonus(buyer collateral)
+    Contract --> Seller: settlementComplete()
+else Seller Fails to Settle (After TGE + Settlement Duration)
+    Buyer -> Contract: cancelOrder(orderID)
+    Contract -> Contract: validateOrder(orderID)
+    Contract -> Contract: validateSettlementPeriodExpired()
+    Contract -> Buyer: releaseCollateral(buyer collateral)
+    Contract -> Buyer: transferCollateralPenalty(seller collateral)
+    Contract --> Buyer: cancelComplete()
+end
+
+@enduml

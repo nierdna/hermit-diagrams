@@ -1,0 +1,112 @@
+@startuml Pre-Token Escrow Smart Contract with Position Exit
+actor "Offer Creator" as Creator
+actor "Offer Filler" as Filler
+actor "Buyer" as Buyer
+actor "Seller" as Seller
+actor "New Position Taker" as NewTaker
+participant "Pre-Token Escrow Smart Contract" as Contract
+
+== Creating Offer ==
+Creator -> Contract: createOffer(type, amount, price, collateral)
+note right: type can be buy/sell
+Contract -> Contract: storeOffer()
+Contract -> Creator: lockCollateral(collateral amount)
+Contract --> Creator: return offerID
+
+== Filling Offer ==
+Filler -> Contract: fillOffer(offerID, collateral)
+Contract -> Contract: validateOffer(offerID)
+Contract -> Contract: createOrder(offerID)
+Contract -> Filler: lockCollateral(collateral amount)
+Contract --> Filler: return orderID
+note right: At this point, buyer and seller roles are assigned based on offer type
+
+== Position Exit Flow ==
+group Exit Buyer Position
+    note right: Buyer wants to exit their position
+    Buyer -> Contract: createExitPositionOffer(orderID, portion, price)
+    note right: portion can be 1-100% of position
+    Contract -> Contract: validateOrder(orderID)
+    Contract -> Contract: validateUserPosition(buyer)
+    Contract -> Contract: createExitOffer(orderID, portion, price)
+    Contract --> Buyer: return exitOfferID
+    
+    alt Exit Offer Filled
+        NewTaker -> Contract: fillExitOffer(exitOfferID, collateral)
+        Contract -> Contract: validateExitOffer(exitOfferID)
+        Contract -> NewTaker: lockCollateral(collateral amount)
+        Contract -> Buyer: transferFunds(price)
+        Contract -> Contract: updateOrderOwnership(orderID, portion, NewTaker)
+        note right: Create child order if partial exit
+        Contract --> NewTaker: return newOrderID
+    else No One Takes Exit Offer
+        note right: After waiting period or by user decision
+        Buyer -> Contract: cancelExitOffer(exitOfferID)
+        Contract -> Contract: validateExitOffer(exitOfferID)
+        Contract -> Contract: validateOfferOwnership(buyer)
+        Contract -> Contract: removeExitOffer(exitOfferID)
+        Contract --> Buyer: exitOfferCancelled()
+    end
+end
+
+group Exit Seller Position
+    note right: Seller wants to exit their position
+    Seller -> Contract: createExitPositionOffer(orderID, portion, price)
+    note right: portion can be 1-100% of position
+    Contract -> Contract: validateOrder(orderID)
+    Contract -> Contract: validateUserPosition(seller)
+    Contract -> Contract: createExitOffer(orderID, portion, price)
+    Contract --> Seller: return exitOfferID
+    
+    alt Exit Offer Filled
+        NewTaker -> Contract: fillExitOffer(exitOfferID, collateral)
+        Contract -> Contract: validateExitOffer(exitOfferID)
+        Contract -> NewTaker: lockCollateral(collateral amount)
+        Contract -> Seller: transferFunds(price)
+        Contract -> Seller: partialReleaseOfCollateral(portion)
+        Contract -> NewTaker: lockExtraCollateral(seller portion collateral)
+        Contract -> Contract: updateOrderOwnership(orderID, portion, NewTaker)
+        note right: Create child order if partial exit
+        Contract --> NewTaker: return newOrderID
+    else No One Takes Exit Offer
+        note right: After waiting period or by user decision
+        Seller -> Contract: cancelExitOffer(exitOfferID)
+        Contract -> Contract: validateExitOffer(exitOfferID)
+        Contract -> Contract: validateOfferOwnership(seller)
+        Contract -> Contract: removeExitOffer(exitOfferID)
+        Contract --> Seller: exitOfferCancelled()
+    end
+end
+
+== Optional: Modify Exit Offer ==
+group Modify Exit Offer Price
+    note right: User wants to change price of exit offer
+    Buyer -> Contract: updateExitOfferPrice(exitOfferID, newPrice)
+    Contract -> Contract: validateExitOffer(exitOfferID)
+    Contract -> Contract: validateOfferOwnership(buyer)
+    Contract -> Contract: updateExitOfferPrice(exitOfferID, newPrice)
+    Contract --> Buyer: priceUpdateConfirmed()
+    
+    note right: Similarly for seller position
+end
+
+== At TGE Time (Token Generation Event) ==
+note right: All orders (original and child orders from position exits) follow this flow
+alt Successful Settlement
+    Seller -> Contract: settleOrder(orderID, tokens)
+    Contract -> Contract: validateOrder(orderID)
+    Contract -> Contract: validateSettlementPeriod()
+    Contract -> Buyer: transferTokens(tokens)
+    Contract -> Seller: releaseCollateral(seller collateral)
+    Contract -> Seller: transferCollateralBonus(buyer collateral)
+    Contract --> Seller: settlementComplete()
+else Seller Fails to Settle (After TGE + Settlement Duration)
+    Buyer -> Contract: cancelOrder(orderID)
+    Contract -> Contract: validateOrder(orderID)
+    Contract -> Contract: validateSettlementPeriodExpired()
+    Contract -> Buyer: releaseCollateral(buyer collateral)
+    Contract -> Buyer: transferCollateralPenalty(seller collateral)
+    Contract --> Buyer: cancelComplete()
+end
+
+@enduml 
