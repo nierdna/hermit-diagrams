@@ -1,0 +1,67 @@
+@startuml FoxNest-Sequence-Diagram
+
+title FoxNest - Decentralized Pre-Market Trading Platform
+
+actor "User (Buyer)" as Buyer
+actor "User (Seller)" as Seller
+participant "FoxNest Platform" as Platform
+participant "Blockchain" as Blockchain
+participant "Smart Contract" as Contract
+
+== 1. Placing Orders (Open Orders) ==
+
+Buyer -> Platform: Place Buy Order with Collateral
+Platform -> Contract: Store Buy Order Information
+Contract -> Blockchain: Record Buy Order
+Blockchain --> Buyer: Confirm Order Placement
+
+Seller -> Platform: Place Sell Order with Collateral
+Platform -> Contract: Store Sell Order Information
+Contract -> Blockchain: Record Sell Order
+Blockchain --> Seller: Confirm Order Placement
+
+== 2. Order Matching ==
+
+Platform -> Contract: Match Compatible Buy/Sell Orders
+Contract -> Blockchain: Create Official Order with Positions
+Blockchain --> Buyer: Assign Buyer Position
+Blockchain --> Seller: Assign Seller Position
+Platform --> Buyer: Notify Order Matched
+Platform --> Seller: Notify Order Matched
+
+== 3. Exiting Positions ==
+
+Buyer -> Platform: Request to Exit Position
+Platform -> Contract: Create New Open Order
+Blockchain --> Buyer: Position Status Updated
+
+alt Full Match
+    Platform -> Contract: Replace Original Position
+    Blockchain --> Buyer: Release Collateral to Original Buyer
+else Partial Match
+    Platform -> Contract: Create Child Order
+    Blockchain --> Buyer: Partial Collateral Released
+end
+
+== 4. Settlement (After TGE) ==
+
+Seller -> Platform: Initiate Token Transfer to Buyer
+Platform -> Contract: Verify Token Transfer
+Contract -> Blockchain: Record Settlement
+Blockchain --> Seller: Return Seller's Collateral
+Blockchain --> Seller: Transfer Buyer's Collateral to Seller
+Platform --> Buyer: Confirm Token Receipt
+Platform --> Seller: Confirm Settlement Complete
+
+== 5. Protection Mechanism ==
+
+alt Settlement Not Completed Within Timeframe
+    Platform -> Contract: Detect Settlement Timeout
+    Contract -> Blockchain: Cancel Order
+    Blockchain --> Seller: Forfeit Seller's Collateral
+    Blockchain --> Buyer: Receive Seller's Collateral as Compensation
+    Platform --> Buyer: Notify Protection Mechanism Activated
+    Platform --> Seller: Notify Settlement Failure
+end
+
+@enduml
