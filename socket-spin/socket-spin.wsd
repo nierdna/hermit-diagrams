@@ -1,0 +1,73 @@
+@startuml Socket Spin Sequence Diagram
+
+' Define participants
+actor User
+participant "Client Website" as Client
+participant "Server" as Server
+participant "Admin Dashboard" as Admin
+database "Database" as DB
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Initial Connection Flow
+group Initial Connection
+    User -> Client: Access website
+    Client --> User: Display interface
+    Client -> Server: Connect socket
+    Server --> Client: Connection successful
+    Server -> DB: Get user's ticket count
+    DB --> Server: Return ticket information
+    Server --> Client: Update UI with ticket count
+end
+
+' Spinning Flow
+group Spinning Flow
+    User -> Client: Press spin button
+    activate Client
+    Client -> Server: Send event "start_spin" \n{userId, ticketId}
+    activate Server
+    
+    Server -> DB: Validate ticket
+    DB --> Server: Return result
+    
+    alt Valid ticket
+        Server -> DB: Decrease ticket count
+        Server -> Admin: Send event "user_spinning" \n{userId, ticketId}
+        activate Admin
+        
+        ' Set timeout
+        Server -> Server: Start countdown timeout (30s)
+        
+        alt Admin decides before timeout
+            Admin -> Server: Send event "select_reward" \n{userId, ticketId, rewardId}
+            Server -> DB: Save result and update reward
+            Server -> Client: Send event "spin_result" \n{result: "win", rewardId}
+            Client -> Client: Display spin animation
+            Client --> User: Show winning notification
+        else Timeout reached
+            Server -> Server: Timeout triggered
+            Server -> Client: Send event "spin_result" \n{result: "lost"}
+            Client -> Client: Display spin animation
+            Client --> User: Show turn lost notification
+        end
+        
+        deactivate Admin
+    else Invalid ticket
+        Server -> Client: Send event "error" \n{message: "Invalid ticket"}
+        Client --> User: Display error message
+    end
+    
+    deactivate Server
+    deactivate Client
+end
+
+' Add notes
+note over Client: Display spin wheel interface and results
+note over Server: Handle

@@ -1,0 +1,145 @@
+@startuml Marketing Analytics System - Deployment Diagram
+
+' Style
+skinparam {
+    NodeBackgroundColor LightBlue
+    DatabaseBackgroundColor LightPink
+    CloudBackgroundColor LightCyan
+    ArrowColor Black
+    BorderColor Gray
+}
+
+' Cloud Infrastructure
+cloud "Cloud Infrastructure" {
+    node "Application Server" as AppServer {
+        frame "Data Collection Services" {
+            [Shortlink Tracker Container] as STC
+            [Telegram Integration Container] as TIC
+            [Combot Extractor Container] as CEC
+            [Ad Tracker Container] as ATC
+        }
+        
+        frame "Data Processing Services" {
+            [API Connector Container] as ACC
+            [Data Transformer Container] as DTC
+        }
+        
+        frame "Analytics Services" {
+            [Analytics Engine Container] as AEC
+            [Segmentation Module Container] as SMC
+            [Insight Generator Container] as IGC
+        }
+        
+        frame "Frontend Services" {
+            [Dashboard Container] as DC
+            [Report Generator Container] as RGC
+            [Notification Service Container] as NSC
+        }
+    }
+    
+    node "Message Queue Server" as MQServer {
+        database "Kafka/RabbitMQ" as MQ
+    }
+    
+    node "Database Server" as DBServer {
+        database "PostgreSQL/MySQL" as DB
+    }
+    
+    node "Data Warehouse" as DWServer {
+        database "BigQuery/Redshift" as DW
+    }
+    
+    node "Cache Server" as CacheServer {
+        database "Redis" as Cache
+    }
+    
+    node "Monitoring" {
+        [Prometheus] as Prom
+        [Grafana] as Graf
+    }
+}
+
+' External Systems
+cloud "External Services" {
+    [Bitly API] as BitlyAPI
+    [Telegram API] as TelegramAPI
+    [Combot Dashboard] as CombotDash
+    [Telegram Ads Platform] as TelegramAds
+}
+
+' Client Devices
+node "Client Devices" as Clients {
+    [Web Browser] as Browser
+    [Mobile App] as MobileApp
+}
+
+' Connections
+STC --> BitlyAPI : "API Calls"
+TIC --> TelegramAPI : "API Calls"
+CEC --> CombotDash : "Data Extraction"
+ATC --> TelegramAds : "Data Collection"
+
+STC --> MQ : "Push Data"
+TIC --> MQ : "Push Data"
+CEC --> MQ : "Push Data"
+ATC --> MQ : "Push Data"
+
+MQ --> ACC : "Consume Data"
+ACC --> DTC : "Pass Data"
+DTC --> DB : "Store Data"
+DB --> DW : "Archive Data"
+
+DB --> AEC : "Query Data"
+AEC --> SMC : "Pass Processed Data"
+SMC --> IGC : "Pass Segmented Data"
+IGC --> DC : "Send Insights"
+IGC --> RGC : "Send Report Data"
+IGC --> NSC : "Send Alert Data"
+
+DC --> Browser : "Display Dashboard"
+RGC --> Browser : "Deliver Reports"
+NSC --> Browser : "Send Notifications"
+DC --> MobileApp : "Display Dashboard"
+NSC --> MobileApp : "Send Notifications"
+
+AEC --> Cache : "Cache Results"
+SMC --> Cache : "Cache Segments"
+
+Prom --> AppServer : "Collect Metrics"
+Prom --> MQServer : "Collect Metrics"
+Prom --> DBServer : "Collect Metrics"
+Graf --> Prom : "Visualize Metrics"
+
+' Notes
+note right of AppServer
+  Containerized microservices
+  Horizontally scalable
+  Managed with Kubernetes/Docker Compose
+end note
+
+note right of MQServer
+  Message broker for async communication
+  Ensures reliable data delivery
+end note
+
+note right of DBServer
+  Relational database for structured data
+  Optimized for analytics queries
+end note
+
+note right of DWServer
+  Long-term data storage
+  Used for historical analysis
+end note
+
+note right of CacheServer
+  Improves performance
+  Reduces database load
+end note
+
+note bottom of Clients
+  Web and mobile interfaces
+  Real-time dashboards and alerts
+end note
+
+@enduml 

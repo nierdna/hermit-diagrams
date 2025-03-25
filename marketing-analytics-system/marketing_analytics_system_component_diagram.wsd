@@ -1,0 +1,148 @@
+@startuml Marketing Analytics System - Component Diagram
+
+' Style
+skinparam {
+    ComponentBackgroundColor LightBlue
+    DatabaseBackgroundColor LightPink
+    QueueBackgroundColor LightYellow
+    InterfaceBackgroundColor LightGreen
+    ArrowColor Black
+    BorderColor Gray
+}
+
+' Components
+package "External Data Sources" {
+    [Shortlink APIs] as ShortlinkAPI
+    [Telegram API] as TelegramAPI
+    [Combot Dashboard] as CombotDash
+    [Telegram Ads] as TelegramAds
+}
+
+package "Data Collection Layer" {
+    [Shortlink Tracking Module] as ShortlinkTracker
+    [Telegram API Integration] as TelegramIntegration
+    [Combot Data Extractor] as CombotExtractor
+    [Ad Campaign Tracker] as AdTracker
+    [Message Queue 1] as MQ1
+    
+    ShortlinkTracker -down-> MQ1 : "Push tracking data"
+    TelegramIntegration -down-> MQ1 : "Push group statistics"
+    CombotExtractor -down-> MQ1 : "Push interaction data"
+    AdTracker -down-> MQ1 : "Push campaign data"
+}
+
+package "Data Integration Layer" {
+    [API Connector] as APIConnector
+    [Data Transformation Module] as DataTransformer
+    [Manual Data Input Interface] as ManualInput
+    [Message Queue 2] as MQ2
+    
+    MQ1 -down-> APIConnector : "Consume raw data"
+    APIConnector -down-> DataTransformer : "Pass connected data"
+    ManualInput -right-> DataTransformer : "Input manual data"
+    DataTransformer -down-> MQ2 : "Push transformed data"
+}
+
+package "Data Storage Layer" {
+    database "Marketing Database" as DB {
+        [Clicks Table]
+        [Messages Table]
+        [Members Table]
+    }
+    
+    database "Data Warehouse" as DW
+    
+    MQ2 -down-> DB : "Store structured data"
+    DB -right-> DW : "Archive historical data"
+}
+
+package "Data Processing & Analytics Layer" {
+    [Analytics Engine] as AnalyticsEngine
+    [Segmentation Module] as SegmentationModule
+    [Insight Generator] as InsightGenerator
+    
+    DB -down-> AnalyticsEngine : "Query data"
+    AnalyticsEngine -right-> SegmentationModule : "Process for segmentation"
+    SegmentationModule -right-> InsightGenerator : "Generate insights"
+}
+
+package "Visualization & Reporting Layer" {
+    [Dashboard] as Dashboard
+    [Report Generator] as ReportGenerator
+    
+    InsightGenerator -down-> Dashboard : "Display insights"
+    InsightGenerator -down-> ReportGenerator : "Generate reports"
+}
+
+package "User Interface Layer" {
+    [Web/Mobile App] as WebApp
+    [Notification System] as NotificationSystem
+    
+    Dashboard -down-> WebApp : "Display visualizations"
+    ReportGenerator -down-> WebApp : "Deliver reports"
+    InsightGenerator -down-> NotificationSystem : "Send alerts"
+}
+
+package "Security & Compliance Layer" {
+    [Authentication] as Auth
+    [Encryption] as Encrypt
+    [Audit Log] as AuditLog
+    
+    Auth -up-> WebApp : "Secure access"
+    Encrypt -up-> DB : "Secure data"
+    AuditLog -up-> WebApp : "Log activities"
+}
+
+' External connections
+ShortlinkAPI -down-> ShortlinkTracker : "Provide click data"
+TelegramAPI -down-> TelegramIntegration : "Provide group stats"
+CombotDash -down-> CombotExtractor : "Provide interaction data"
+TelegramAds -down-> AdTracker : "Provide campaign data"
+
+' Notes
+note right of ShortlinkTracker
+  Tracks clicks on invitation links
+  Uses Bitly, TinyURL, or Rebrandly APIs
+end note
+
+note right of TelegramIntegration
+  Retrieves group statistics
+  Uses Telegram Bot API or Client API
+end note
+
+note right of CombotExtractor
+  Extracts interaction data
+  Custom bot or manual export
+end note
+
+note right of AdTracker
+  Tracks ad campaign performance
+  From Telegram Ads or custom links
+end note
+
+note right of DataTransformer
+  Normalizes data from different sources
+  Maps countries, languages, devices
+end note
+
+note bottom of DB
+  Stores structured marketing data
+  Optimized for analytics queries
+end note
+
+note right of AnalyticsEngine
+  Calculates KPIs like CTR, engagement rate
+  Analyzes performance by country
+end note
+
+note right of Dashboard
+  Visualizes data with charts and maps
+  Shows trends and comparisons
+end note
+
+note bottom of NotificationSystem
+  Sends alerts on significant changes
+  Uses Telegram Bot API or email
+end note
+
+@enduml 

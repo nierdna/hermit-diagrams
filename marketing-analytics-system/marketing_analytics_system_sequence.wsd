@@ -1,0 +1,129 @@
+@startuml Marketing Analytics System - Sequence Diagram
+
+' Define participants
+actor "Marketing Team" as MarketingTeam
+participant "Shortlink Tracking Module" as ShortlinkTracker
+participant "Telegram API Integration" as TelegramIntegration
+participant "Combot Data Extractor" as CombotExtractor
+participant "Ad Campaign Tracker" as AdTracker
+participant "API Connector" as APIConnector
+participant "Data Transformation Module" as DataTransformer
+participant "Manual Data Input Interface" as ManualInput
+queue "Message Queue" as MessageQueue
+database "Marketing Database" as MarketingDB
+participant "Analytics Engine" as AnalyticsEngine
+participant "Segmentation Module" as SegmentationModule
+participant "Insight Generator" as InsightGenerator
+participant "Dashboard" as Dashboard
+participant "Report Generator" as ReportGenerator
+participant "Notification System" as NotificationSystem
+
+' Style
+skinparam sequence {
+    ParticipantBackgroundColor LightBlue
+    ActorBackgroundColor LightGreen
+    DatabaseBackgroundColor LightPink
+    QueueBackgroundColor LightYellow
+    LifeLineColor Gray
+    BorderColor Black
+}
+
+' Initial Data Collection Flow
+group Data Collection Flow
+    activate ShortlinkTracker
+    ShortlinkTracker -> ShortlinkTracker: 1. Poll Shortlink APIs (Bitly, TinyURL)
+    note right: Collect click data from invitation links
+    
+    activate TelegramIntegration
+    TelegramIntegration -> TelegramIntegration: 2. Query Telegram API
+    note right: Get group statistics and member info
+    
+    activate CombotExtractor
+    CombotExtractor -> CombotExtractor: 3. Extract data from Combot
+    note right: Get interaction metrics and active users
+    
+    activate AdTracker
+    AdTracker -> AdTracker: 4. Collect ad campaign data
+    note right: Track performance of Telegram ads
+    
+    ShortlinkTracker -> MessageQueue: 5. Push tracking data
+    TelegramIntegration -> MessageQueue: 6. Push group statistics
+    CombotExtractor -> MessageQueue: 7. Push interaction data
+    AdTracker -> MessageQueue: 8. Push campaign data
+    
+    deactivate ShortlinkTracker
+    deactivate TelegramIntegration
+    deactivate CombotExtractor
+    deactivate AdTracker
+end
+
+' Data Integration Flow
+group Data Integration Flow
+    MessageQueue -> APIConnector: 9. Consume raw data
+    activate APIConnector
+    
+    APIConnector -> DataTransformer: 10. Pass connected data
+    activate DataTransformer
+    
+    MarketingTeam -> ManualInput: 11. Input manual data (if needed)
+    ManualInput -> DataTransformer: 12. Pass manual data
+    
+    DataTransformer -> DataTransformer: 13. Transform and normalize data
+    note right: Standardize formats, map countries
+    
+    DataTransformer -> MarketingDB: 14. Store structured data
+    deactivate DataTransformer
+    deactivate APIConnector
+end
+
+' Analytics Flow
+group Analytics Flow
+    activate AnalyticsEngine
+    AnalyticsEngine -> MarketingDB: 15. Query data
+    MarketingDB -> AnalyticsEngine: Return query results
+    
+    AnalyticsEngine -> AnalyticsEngine: 16. Calculate KPIs
+    note right: CTR, engagement rate, conversion
+    
+    AnalyticsEngine -> SegmentationModule: 17. Pass processed data
+    activate SegmentationModule
+    
+    SegmentationModule -> SegmentationModule: 18. Segment users by country/behavior
+    
+    SegmentationModule -> InsightGenerator: 19. Pass segmented data
+    activate InsightGenerator
+    
+    InsightGenerator -> InsightGenerator: 20. Generate insights and recommendations
+    
+    deactivate AnalyticsEngine
+    deactivate SegmentationModule
+end
+
+' Visualization and Reporting Flow
+group Visualization and Reporting Flow
+    InsightGenerator -> Dashboard: 21. Send insights for visualization
+    activate Dashboard
+    
+    InsightGenerator -> ReportGenerator: 22. Send data for reports
+    activate ReportGenerator
+    
+    InsightGenerator -> NotificationSystem: 23. Send important alerts
+    activate NotificationSystem
+    
+    Dashboard -> MarketingTeam: 24. Display interactive visualizations
+    ReportGenerator -> MarketingTeam: 25. Deliver scheduled reports
+    NotificationSystem -> MarketingTeam: 26. Send notifications on significant changes
+    
+    deactivate InsightGenerator
+    deactivate Dashboard
+    deactivate ReportGenerator
+    deactivate NotificationSystem
+end
+
+' Add notes
+note over ShortlinkTracker, AdTracker: Data Collection Layer gathers raw data from multiple sources
+note over APIConnector, DataTransformer: Data Integration Layer standardizes data formats
+note over AnalyticsEngine, InsightGenerator: Data Processing Layer generates actionable insights
+note over Dashboard, NotificationSystem: Visualization Layer presents insights to marketing team
+
+@enduml 
