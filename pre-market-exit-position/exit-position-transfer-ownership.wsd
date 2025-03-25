@@ -1,0 +1,71 @@
+@startuml Pre-Token Escrow Smart Contract with Position Exit (Ownership Transfer)
+actor "Position Owner (Exiter)" as Exiter
+actor "Position Taker" as Taker
+participant "Pre-Token Escrow Smart Contract" as Contract
+database "Contract Storage" as Storage
+
+== Initial Order Creation (Simplified) ==
+note over Contract, Storage: Initial order creation process (simplified)
+Contract -> Storage: Create Order Record
+note right: Order {id, buyer, seller, amount, price, buyerCollateral, sellerCollateral, status}
+
+== Position Exit via Ownership Transfer ==
+group Exit Position Process
+    note right: Position owner wants to exit by transferring ownership
+    Exiter -> Contract: createExitOffer(orderID, price, role)
+    note right: role=buyer/seller, price=exit price
+    Contract -> Storage: Read Order(orderID)
+    Storage --> Contract: Return Order Details
+    Contract -> Contract: validateUserIsPositionOwner(exiter, role)
+    
+    Contract -> Storage: Create ExitOffer {id, orderID, exiter, role, price}
+    Contract --> Exiter: return exitOfferID
+    
+    alt Exit Offer Filled
+        Taker -> Contract: fillExitOffer(exitOfferID, collateral)
+        Contract -> Storage: Read ExitOffer(exitOfferID)
+        Storage --> Contract: Return ExitOffer Details
+        Contract -> Storage: Read Order(exitOffer.orderID)
+        Storage --> Contract: Return Order Details
+        
+        note right: Direct ownership transfer from exiter to taker
+        Contract -> Storage: Update Order.[role] = taker
+        Contract -> Taker: lockCollateral(requiredCollateral)
+        Contract -> Exiter: transferFunds(price) + releaseCollateral
+        
+        Contract -> Storage: Remove ExitOffer(exitOfferID)
+        Contract --> Taker: exitOfferFilled(orderID)
+        
+    else No One Takes Exit Offer
+        Exiter -> Contract: cancelExitOffer(exitOfferID)
+        Contract -> Storage: Read ExitOffer(exitOfferID)
+        Storage --> Contract: Return ExitOffer Details
+        Contract -> Contract: validateOfferOwnership(exiter)
+        Contract -> Storage: Remove ExitOffer(exitOfferID)
+        Contract --> Exiter: exitOfferCancelled()
+    end
+end
+
+== Optional: Modify Exit Offer ==
+group Modify Exit Offer Details
+    Exiter -> Contract: updateExitOfferPrice(exitOfferID, newPrice)
+    Contract -> Storage: Read ExitOffer(exitOfferID)
+    Storage --> Contract: Return ExitOffer Details
+    Contract -> Contract: validateOfferOwnership(exiter)
+    Contract -> Storage: Update ExitOffer.price = newPrice
+    Contract --> Exiter: priceUpdateConfirmed()
+end
+
+== At TGE Time ==
+note right: Orders follow this flow at token generation event
+alt Successful Settlement
+    note over Contract, Storage: Seller settles the order
+    Contract -> Storage: Update Order.status = "settled"
+    Contract -> Storage: Record token transfer details
+else Settlement Failure
+    note over Contract, Storage: Buyer cancels after settlement period
+    Contract -> Storage: Update Order.status = "cancelled"
+    Contract -> Storage: Record collateral penalties
+end
+
+@enduml 
